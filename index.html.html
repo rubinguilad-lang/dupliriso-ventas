@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orden de Pedido</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --border: #d4cfc4;
+    --border-dark: #a09890;
+    --text: #1a1714;
+    --text-muted: #7a7168;
+    --accent: #c84b2f;
+    --accent-light: #f9ede9;
+    --green: #2a7a4b;
+    --green-light: #e8f4ee;
+    --gold: #b8861a;
+    --gold-light: #faf3e0;
+    --warn: #b85c1a;
+    --warn-light: #fdf0e8;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    background: var(--text);
+    color: #f5f2eb;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--accent);
+  }
+  .header-logo { font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+  .header-sub { font-size: 11px; color: #9a9080; font-family: var(--mono); margin-top: 2px; }
+  .header-date { font-family: var(--mono); font-size: 11px; color: #9a9080; text-align: right; }
+
+  /* Progress */
+  .progress-bar {
+    background: var(--text);
+    padding: 0 32px 16px;
+    display: flex;
+    gap: 0;
+  }
+  .prog-step {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: #5a5248;
+    padding: 6px 4px;
+    border-bottom: 2px solid #3a3530;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .prog-step.active { color: #f5f2eb; border-bottom-color: var(--accent); }
+  .prog-step.done { color: var(--green); border-bottom-color: var(--green); }
+
+  /* Main */
+  .main { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* Section */
+  .section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: none;
+  }
+  .section.visible { display: block; }
+
+  .section-head {
+    background: var(--text);
+    color: #f5f2eb;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-num {
+    width: 24px; height: 24px;
+    border: 1.5px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: var(--mono);
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+  .section-body { padding: 20px; }
+
+  /* Fields */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field-row.full { grid-template-columns: 1fr; }
+  .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 10px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+  .field input, .field select, .field textarea {
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color .15s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--text);
+    background: #fff;
+  }
+  .field input.error { border-color: var(--accent); background: var(--accent-light); }
+  .field input.ok { border-color: var(--green); }
+  .field .hint { font-size: 10px; font-family: var(--mono); color: var(--text-muted); }
+  .field .err-msg { font-size: 10px; font-family: var(--mono); color: var(--accent); display: none; }
+  .field input.error ~ .err-msg { display: block; }
+
+  /* Toggle tipo venta */
+  .tipo-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 20px; }
+  .tipo-btn {
+    flex: 1; padding: 12px; text-align: center; cursor: pointer;
+    font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    background: var(--bg); color: var(--text-muted);
+    border: none; transition: all .2s; font-family: var(--sans);
+  }
+  .tipo-btn.active-contado { background: var(--green); color: #fff; }
+  .tipo-btn.active-financiada { background: var(--gold); color: #fff; }
+
+  /* Calc box */
+  .calc-box {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .calc-title { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+  .calc-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .calc-row:last-child { border-bottom: none; }
+  .calc-row.total { font-weight: 700; font-size: 14px; border-top: 2px solid var(--text); margin-top: 4px; padding-top: 10px; }
+  .calc-row.total .val { color: var(--accent); font-family: var(--mono); }
+  .calc-row .val { font-family: var(--mono); color: var(--text); }
+  .calc-row .lbl { color: var(--text-muted); }
+
+  /* Validation banner */
+  .val-banner {
+    border-radius: 2px;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-family: var(--mono);
+    margin-top: 14px;
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .val-banner.show { display: flex; }
+  .val-banner.ok { background: var(--green-light); border: 1.5px solid var(--green); color: var(--green); }
+  .val-banner.warn { background: var(--warn-light); border: 1.5px solid var(--warn); color: var(--warn); }
+  .val-banner.info { background: var(--gold-light); border: 1.5px solid var(--gold); color: var(--gold); }
+
+  /* Mantenimiento */
+  .mant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mant-card {
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    padding: 14px;
+    background: var(--bg);
+  }
+  .mant-card-title { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; color: var(--text-muted); }
+  .mant-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .mant-row label { font-size: 11px; width: 80px; flex-shrink: 0; color: var(--text-muted); font-family: var(--mono); }
+  .mant-row input {
+    flex: 1; border: 1.5px solid var(--border); border-radius: 2px;
+    padding: 6px 9px; font-size: 12px; font-family: var(--mono);
+    background: #fff; outline: none; transition: border-color .15s;
+  }
+  .mant-row input:focus { border-color: var(--text); }
+  .mant-subtotal { font-family: var(--mono); font-size: 13px; font-weight: 500; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+
+  /* Aprobación express */
+  .apro-box {
+    border: 1.5px dashed var(--gold);
+    border-radius: 2px;
+    background: var(--gold-light);
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .apro-title { font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-bottom: 8px; font-weight: 600; }
+  .apro-desc { font-size: 12px; color: #6b5a1a; line-height: 1.6; margin-bottom: 12px; }
+  .apro-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .apro-check input[type=checkbox] { margin-top: 2px; accent-color: var(--gold); }
+  .apro-check span { font-size: 12px; color: #6b5a1a; line-height: 1.5; }
+
+  /* Resumen final */
+  .resumen-box {
+    background: var(--text);
+    color: #f5f2eb;
+    border-radius: 2px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .resumen-title { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 2px; color: #9a9080; margin-bottom: 14px; }
+  .resumen-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #2a2520; font-size: 12px; }
+  .resumen-row:last-child { border-bottom: none; }
+  .resumen-row .rlbl { color: #9a9080; font-family: var(--mono); }
+  .resumen-row .rval { font-weight: 600; font-family: var(--mono); }
+  .resumen-row.highlight .rval { color: var(--accent); font-size: 14px; }
+
+  /* Docs preview */
+  .docs-list { display: flex; flex-direction: column; gap: 8px; }
+  .doc-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    background: var(--bg);
+  }
+  .doc-icon { font-size: 18px; }
+  .doc-name { font-size: 12px; font-weight: 600; }
+  .doc-desc { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+  .doc-badge {
+    margin-left: auto;
+    font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 2px;
+  }
+  .badge-auto { background: var(--green-light); color: var(--green); border: 1px solid var(--green); }
+  .badge-pend { background: var(--gold-light); color: var(--gold); border: 1px solid var(--gold); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+  .btn {
+    padding: 12px 24px; border: none; border-radius: 2px; cursor: pointer;
+    font-family: var(--sans); font-weight: 700; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 1px; transition: all .15s;
+  }
+  .btn-primary { background: var(--text); color: #f5f2eb; flex: 1; }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-secondary { background: transparent; color: var(--text-muted); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+  .btn-generate {
+    background: var(--accent); color: #fff; flex: 1;
+    font-size: 13px; padding: 14px;
+  }
+  .btn-generate:hover { background: #a83520; }
+
+  /* Claúsula preview */
+  .clausula-box {
+    background: #fff8f0;
+    border-left: 3px solid var(--warn);
+    padding: 12px 14px;
+    font-size: 11px;
+    color: #5a3010;
+    font-family: var(--mono);
+    line-height: 1.7;
+    margin-top: 10px;
+    border-radius: 0 2px 2px 0;
+    display: none;
+  }
+  .clausula-box.show { display: block; }
+
+  /* Nav buttons fixed */
+  .nav-fixed {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1.5px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+  }
+  .nav-fixed .step-info { font-size: 11px; font-family: var(--mono); color: var(--text-muted); }
+
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; }
+    .field-row.three { grid-template-columns: 1fr; }
+    .mant-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px 12px 80px; }
+    .header { padding: 14px 16px; }
+    .progress-bar { padding: 0 16px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">Orden de Pedido</div>
+    <div class="header-sub">Sistema de Contratos — Gestión Comercial</div>
+  </div>
+  <div class="header-date" id="fecha-hoy"></div>
+</div>
+
+<div class="progress-bar">
+  <div class="prog-step active" data-step="1" onclick="goStep(1)">1. Cliente</div>
+  <div class="prog-step" data-step="2" onclick="goStep(2)">2. Equipo</div>
+  <div class="prog-step" data-step="3" onclick="goStep(3)">3. Financiamiento</div>
+  <div class="prog-step" data-step="4" onclick="goStep(4)">4. Mantenimiento</div>
+  <div class="prog-step" data-step="5" onclick="goStep(5)">5. Resumen</div>
+</div>
+
+<div class="main">
+
+  <!-- PASO 1: CLIENTE -->
+  <div class="section visible" id="sec-1">
+    <div class="section-head">
+      <div class="section-num">1</div>
+      <div class="section-title">Datos del Cliente</div>
+    </div>
+    <div class="section-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Nombre completo / Razón social</label>
+          <input type="text" id="nombre" placeholder="Ej: Juan Pérez o Empresa S.A.">
+        </div>
+        <div class="field">
+          <label>Cédula / RUC</label>
+          <input type="text" id="cedula" placeholder="Ej: 8-888-888">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" id="telefono" placeholder="Ej: 6000-0000">
+        </div>
+        <div class="field">
+          <label>Correo electrónico</label>
+          <input type="email" id="email" placeholder="cliente@empresa.com">
+        </div>
+      </div>
+      <div class="field-row full">
+        <div class="field">
+          <label>Dirección / Zona</label>
+          <input type="text" id="direccion" placeholder="Ej: Vía España, Ciudad de Panamá">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Vendedor</label>
+          <select id="vendedor" onchange="actualizarEmailVendedor()">
+            <option value="">— Seleccionar —</option>
+            <option value="Jorge Huerta">Jorge Huerta</option>
+            <option value="Ramon Icaza">Ramon Icaza</option>
+            <option value="Orlando Chanis">Orlando Chanis</option>
+            <option value="Sharin Polo">Sharin Polo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tipo de cliente</label>
+          <select id="tipo-cliente">
+            <option value="">— Seleccionar —</option>
+            <option>Persona natural</option>
+            <option>Sociedad Anónima</option>
+            <option>Gobierno / Institución</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: EQUIPO -->
+  <div class="section" id="sec-2">
+    <div class="section-head">
+      <div class="section-num">2</div>
+      <div class="section-title">Equipo y Precio</div>
+    </div>
+    <div class="section-body">
+
+      <!-- ITBMS Exento -->
+      <div style="margin-bottom:16px;padding:12px 16px;background:var(--gold-light);border:1.5px solid var(--gold);border-radius:2px;display:flex;align-items:center;gap:12px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);">
+          <input type="checkbox" id="check-exento-itbms" onchange="calcular();calcMant()" style="width:16px;height:16px;cursor:pointer;">
+          Exento de ITBMS
+        </label>
+        <span style="font-size:12px;color:var(--gold);">Cuando está activo no se aplica el 7% de ITBMS al equipo ni al mantenimiento</span>
+      </div>
+
+      <!-- Lista de equipos dinámica -->
+      <div id="lista-equipos"></div>
+
+      <button type="button" onclick="agregarEquipo()" style="margin-top:10px;padding:8px 18px;background:var(--bg);border:1px dashed var(--border-dark);border-radius:2px;cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text-muted);">+ Agregar otro equipo</button>
+
+      <!-- Tipo de venta -->
+      <div style="margin-top:18px;">
+        <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;">Tipo de venta</div>
+        <div class="tipo-toggle">
+          <button class="tipo-btn active-contado" id="btn-contado" onclick="setTipo('contado')">✓ Contado</button>
+          <button class="tipo-btn" id="btn-financiada" onclick="setTipo('financiada')">◎ Financiada</button>
+        </div>
+      </div>
+
+      <!-- Validación precio -->
+      <div class="val-banner" id="banner-precio"></div>
+    </div>
+  </div>
+
+  <!-- PASO 3: FINANCIAMIENTO -->
+  <div class="section" id="sec-3">
+    <div class="section-head">
+      <div class="section-num">3</div>
+      <div class="section-title">Condiciones de Financiamiento</div>
+    </div>
+    <div class="section-body">
+
+      <div id="bloque-contado" style="display:none;">
+        <div class="val-banner ok show">
+          <span>✓</span>
+          <span>Venta al contado. Solo se generará el <strong>Contrato de Mantenimiento</strong>. Pasa al siguiente paso.</span>
+        </div>
+      </div>
+
+      <div id="bloque-financiada">
+        <div class="field-row three">
+          <div class="field">
+            <label>Prima / Inicial (USD)</label>
+            <input type="number" id="prima" placeholder="0.00" step="0.01" min="0" oninput="calcular()">
+          </div>
+          <div class="field">
+            <label>Plazo (meses)</label>
+            <input type="number" id="plazo" placeholder="Ej: 24" min="1" max="120" step="1" oninput="calcular()" style="width:100%">
+            <div class="hint">Ingrese cualquier número de meses</div>
+          </div>
+          <div class="field">
+            <label>Tasa mensual</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="text" id="tasa-display" value="1.00%" readonly style="background:#f0f0ea;color:var(--text-muted);flex:1">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap">
+                <input type="checkbox" id="check-sin-interes" onchange="toggleSinInteres()" style="width:14px;height:14px">
+                Sin interés
+              </label>
+            </div>
+            <div class="hint" id="hint-sin-interes" style="display:none;color:#b8861a">⚠ Sujeto a aprobación del gerente</div>
+            <div class="hint">Fija — no editable</div>
+          </div>
+        </div>
+
+        <div class="calc-box" id="calc-financiero">
+          <div class="calc-title">Calculadora de Financiamiento</div>
+          <div class="calc-row"><span class="lbl">Precio del equipo</span><span class="val" id="c-precio">—</span></div>
+          <div class="calc-row"><span class="lbl">Menos prima / inicial</span><span class="val" id="c-prima">—</span></div>
+          <div class="calc-row"><span class="lbl">Saldo a financiar</span><span class="val" id="c-saldo">—</span></div>
+          <div class="calc-row"><span class="lbl">Factor (1 + tasa×plazo)</span><span class="val" id="c-factor">—</span></div>
+          <div class="calc-row"><span class="lbl">Total a pagar</span><span class="val" id="c-total">—</span></div>
+          <div class="calc-row total"><span class="lbl">Cuota mensual equipo</span><span class="val" id="c-cuota">—</span></div>
+        </div>
+
+        <!-- Documentos requeridos -->
+        <div style="margin-top:20px;">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">📎 Documentos requeridos para crédito</div>
+          <div style="background:var(--gold-light);border:1.5px solid var(--gold);border-radius:2px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-family:var(--mono);color:var(--gold);font-weight:700;margin-bottom:8px;">Adjunte los siguientes documentos del cliente</div>
+            <div style="font-size:12px;color:#6b5a1a;line-height:1.7;">
+              ① Cédula de identidad (ambos lados)<br>
+              ② Solicitud de crédito firmada por el cliente<br>
+              ③ Documentos de la Sociedad Anónima (si aplica)
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Cédula del cliente (foto)</label>
+              <input type="file" id="doc-cedula" accept="image/*,application/pdf" multiple style="padding:6px;font-size:12px;">
+              <div class="hint">Frontal y posterior</div>
+            </div>
+            <div class="field">
+              <label>Solicitud de crédito firmada</label>
+              <input type="file" id="doc-solicitud" accept="image/*,application/pdf" style="padding:6px;font-size:12px;">
+            </div>
+          </div>
+          <div class="field-row full">
+            <div class="field">
+              <label>Documentos S.A. (si aplica)</label>
+              <input type="file" id="doc-sa" accept="image/*,application/pdf" multiple style="padding:6px;font-size:12px;">
+              <div class="hint">Pacto social, certs. de acciones, poder, etc.</div>
+            </div>
+          </div>
+          <div class="val-banner" id="banner-docs"></div>
+        </div>
+
+        <!-- Fiadores -->
+        <div style="margin-top:20px;">
+          <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">👥 Fiadores solidarios</div>
+          <div style="background:#f5f2eb;border:1.5px solid #c8b87a;border-radius:2px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-family:var(--mono);color:#8a6a10;font-weight:700;margin-bottom:6px;">¿Aplican fiadores en esta venta?</div>
+            <div style="font-size:12px;color:#6b5a1a;">Personas naturales que respaldan la deuda con su firma a título personal.</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;">
+            <input type="checkbox" id="check-fiadores" onchange="toggleFiadores()" style="width:16px;height:16px;">
+            <span>Esta venta requiere fiador(es) solidario(s)</span>
+          </label>
+
+          <div id="sec-fiadores" style="display:none;">
+            <!-- Fiador 1 -->
+            <div style="background:#fff;border:1px solid #d4cfc4;border-radius:2px;padding:16px;margin-bottom:12px;">
+              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;">Fiador Solidario #1</div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Nombre completo</label>
+                  <input type="text" id="fiador1-nombre" placeholder="Nombre del fiador">
+                </div>
+                <div class="field">
+                  <label>Cédula de identidad</label>
+                  <input type="text" id="fiador1-cedula" placeholder="0-000-0000">
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Domicilio</label>
+                  <input type="text" id="fiador1-direccion" placeholder="Dirección del fiador">
+                </div>
+                <div class="field">
+                  <label>Estado civil</label>
+                  <select id="fiador1-estado">
+                    <option value="soltero(a)">Soltero(a)</option>
+                    <option value="casado(a)">Casado(a)</option>
+                    <option value="divorciado(a)">Divorciado(a)</option>
+                    <option value="unido(a)">Unido(a) en matrimonio</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fiador 2 (opcional) -->
+            <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:12px;cursor:pointer;">
+              <input type="checkbox" id="check-fiador2" onchange="toggleFiador2()" style="width:16px;height:16px;">
+              <span>Agregar segundo fiador</span>
+            </label>
+            <div id="sec-fiador2" style="display:none;background:#fff;border:1px solid #d4cfc4;border-radius:2px;padding:16px;">
+              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;">Fiador Solidario #2</div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Nombre completo</label>
+                  <input type="text" id="fiador2-nombre" placeholder="Nombre del fiador">
+                </div>
+                <div class="field">
+                  <label>Cédula de identidad</label>
+                  <input type="text" id="fiador2-cedula" placeholder="0-000-0000">
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Domicilio</label>
+                  <input type="text" id="fiador2-direccion" placeholder="Dirección del fiador">
+                </div>
+                <div class="field">
+                  <label>Estado civil</label>
+                  <select id="fiador2-estado">
+                    <option value="soltero(a)">Soltero(a)</option>
+                    <option value="casado(a)">Casado(a)</option>
+                    <option value="divorciado(a)">Divorciado(a)</option>
+                    <option value="unido(a)">Unido(a) en matrimonio</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aprobación express -->
+        <div class="apro-box" id="apro-box" style="margin-top:14px;">
+          <div class="apro-title">⚡ Aprobación Express</div>
+          <div class="apro-desc">Si el gerente no está disponible para aprobar en este momento, puedes generar los contratos con la cláusula <em>"Sujeto a aprobación crediticia"</em>. El financiamiento <strong>no está confirmado</strong> hasta que el gerente firme.</div>
+          <label class="apro-check">
+            <input type="checkbox" id="check-express" onchange="toggleExpress()">
+            <span>Generar contratos de forma provisional con cláusula de aprobación pendiente. El cliente entiende que el financiamiento no está aprobado.</span>
+          </label>
+          <div class="clausula-box" id="clausula-preview">
+            📋 CLÁUSULA A INCLUIR:<br><br>
+            "El presente contrato está <strong>sujeto a aprobación crediticia</strong> por parte de [Empresa]. El financiamiento aquí acordado no tendrá efecto legal hasta tanto el representante autorizado de la empresa suscriba su aprobación en el campo correspondiente. En caso de no aprobación, el presente documento quedará nulo de pleno derecho."
+          </div>
+        </div>
+
+        <div class="val-banner" id="banner-financiero"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PASO 4: MANTENIMIENTO -->
+  <div class="section" id="sec-4">
+    <div class="section-head">
+      <div class="section-num">4</div>
+      <div class="section-title">Contrato de Mantenimiento</div>
+    </div>
+    <div class="section-body">
+
+      <div class="mant-grid">
+        <div class="mant-card">
+          <div class="mant-card-title">🎨 Páginas a Color</div>
+          <div class="mant-row">
+            <label>Cantidad</label>
+            <input type="number" id="pag-color" placeholder="0" min="0" oninput="calcMant()">
+          </div>
+          <div class="mant-row">
+            <label>Precio/pág</label>
+            <input type="number" id="precio-color" placeholder="0.10" step="0.001" min="0" value="0.10" oninput="calcMant()">
+          </div>
+          <div class="mant-subtotal">
+            <span>Subtotal color:</span>
+            <span id="sub-color">$0.00</span>
+          </div>
+        </div>
+
+        <div class="mant-card">
+          <div class="mant-card-title">⬛ Páginas B&N</div>
+          <div class="mant-row">
+            <label>Cantidad</label>
+            <input type="number" id="pag-bn" placeholder="0" min="0" oninput="calcMant()">
+          </div>
+          <div class="mant-row">
+            <label>Precio/pág</label>
+            <input type="number" id="precio-bn" placeholder="0.015" step="0.001" min="0" value="0.015" oninput="calcMant()">
+          </div>
+          <div class="mant-subtotal">
+            <span>Subtotal B&N:</span>
+            <span id="sub-bn">$0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-box" style="margin-top:14px;">
+        <div class="calc-title">Resumen Mantenimiento Mensual</div>
+        <div class="calc-row"><span class="lbl">Color (<span id="r-pag-color">0</span> págs × $<span id="r-precio-color">0.10</span>)</span><span class="val" id="r-sub-color">$0.00</span></div>
+        <div class="calc-row"><span class="lbl">B&N (<span id="r-pag-bn">0</span> págs × $<span id="r-precio-bn">0.015</span>)</span><span class="val" id="r-sub-bn">$0.00</span></div>
+        <div class="calc-row total"><span class="lbl">Total mantenimiento / mes</span><span class="val" id="r-total-mant">$0.00</span></div>
+      </div>
+
+      <div class="val-banner" id="banner-mant"></div>
+
+    </div>
+  </div>
+
+  <!-- PASO 5: RESUMEN -->
+  <div class="section" id="sec-5">
+    <div class="section-head">
+      <div class="section-num">5</div>
+      <div class="section-title">Resumen y Generación de Contratos</div>
+    </div>
+    <div class="section-body">
+
+      <div class="resumen-box" id="resumen-box">
+        <div class="resumen-title">Orden de Pedido — Vista Previa</div>
+        <div class="resumen-row"><span class="rlbl">Cliente</span><span class="rval" id="r-nombre">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Cédula / RUC</span><span class="rval" id="r-cedula">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Vendedor</span><span class="rval" id="r-vendedor">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Equipo</span><span class="rval" id="r-modelo">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Precio negociado</span><span class="rval" id="r-precio-neg">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Tipo de venta</span><span class="rval" id="r-tipo">—</span></div>
+        <div class="resumen-row" id="r-row-cuota" style="display:none;"><span class="rlbl">Cuota mensual equipo</span><span class="rval highlight" id="r-cuota-fin">—</span></div>
+        <div class="resumen-row" id="r-row-plazo" style="display:none;"><span class="rlbl">Plazo</span><span class="rval" id="r-plazo-fin">—</span></div>
+        <div class="resumen-row"><span class="rlbl">Mantenimiento / mes</span><span class="rval highlight" id="r-mant-fin">—</span></div>
+        <div class="resumen-row highlight"><span class="rlbl">TOTAL MENSUAL CLIENTE</span><span class="rval" id="r-total-cliente">—</span></div>
+      </div>
+
+      <!-- Documentos a generar -->
+      <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">Documentos a generar</div>
+      <div class="docs-list" id="docs-list">
+        <!-- Se llena dinámicamente -->
+      </div>
+
+      <div class="val-banner" id="banner-final"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-generate" onclick="generarOrden()">⬇ Enviar Orden & Generar Contratos</button>
+      </div>
+
+      <div id="msg-enviado" style="display:none;margin-top:16px;">
+        <div class="val-banner ok show">
+          <span>✓</span>
+          <span id="msg-enviado-texto">Orden enviada correctamente. Los contratos se generarán automáticamente en Make y serán enviados por WhatsApp/email.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- NAV FIJO -->
+<div class="nav-fixed">
+  <button class="btn btn-secondary" onclick="prevStep()" id="btn-prev" style="display:none;">← Atrás</button>
+  <span class="step-info" id="nav-info">Paso 1 de 5</span>
+  <button class="btn btn-primary" onclick="nextStep()" id="btn-next">Siguiente →</button>
+</div>
+
+<script>
+// Estado global
+let currentStep = 1;
+let tipoVenta = 'contado';
+
+// Fecha
+const d = new Date();
+document.getElementById('fecha-hoy').innerHTML =
+  d.toLocaleDateString('es-PA', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) +
+  '<br>' + d.toLocaleTimeString('es-PA', {hour:'2-digit', minute:'2-digit'});
+
+function goStep(n) {
+  // Ocultar todo
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('sec-' + i).classList.remove('visible');
+    document.querySelector(`.prog-step[data-step="${i}"]`).classList.remove('active');
+  }
+  document.getElementById('sec-' + n).classList.add('visible');
+  document.querySelector(`.prog-step[data-step="${n}"]`).classList.add('active');
+  currentStep = n;
+
+  // Nav buttons
+  document.getElementById('btn-prev').style.display = n > 1 ? 'block' : 'none';
+  document.getElementById('btn-next').style.display = n < 5 ? 'block' : 'none';
+  document.getElementById('nav-info').textContent = `Paso ${n} de 5`;
+
+  if (n === 5) buildResumen();
+  window.scrollTo(0, 0);
+}
+
+function validarPaso(paso) {
+  const errores = [];
+
+  if (paso === 1) {
+    if (!document.getElementById('nombre').value.trim())
+      errores.push('Nombre completo / Razón social');
+    if (!document.getElementById('cedula').value.trim())
+      errores.push('Cédula / RUC');
+    if (!document.getElementById('telefono').value.trim())
+      errores.push('Teléfono');
+    if (!document.getElementById('email').value.trim())
+      errores.push('Correo electrónico');
+    if (!document.getElementById('direccion').value.trim())
+      errores.push('Dirección / Zona');
+    if (!document.getElementById('vendedor').value)
+      errores.push('Vendedor');
+    if (!document.getElementById('tipo-cliente').value)
+      errores.push('Tipo de cliente');
+  }
+
+  if (paso === 2) {
+    const equipos = getEquipos();
+    const primerEquipo = equipos[0];
+    if (!primerEquipo || !primerEquipo.modelo.trim())
+      errores.push('Modelo del equipo');
+    if (!primerEquipo || (primerEquipo.precio <= 0 && primerEquipo.lista <= 0))
+      errores.push('Precio del equipo');
+  }
+
+  if (paso === 4) {
+    const pagColor = parseFloat(document.getElementById('pag-color').value) || 0;
+    const pagBN = parseFloat(document.getElementById('pag-bn').value) || 0;
+    const precioColor = parseFloat(document.getElementById('precio-color').value) || 0;
+    const precioBN = parseFloat(document.getElementById('precio-bn').value) || 0;
+    if (pagColor === 0 && pagBN === 0)
+      errores.push('Páginas de mantenimiento (color o B&N)');
+    if (pagColor > 0 && precioColor === 0)
+      errores.push('Precio por página a color');
+    if (pagBN > 0 && precioBN === 0)
+      errores.push('Precio por página B&N');
+  }
+
+  if (errores.length > 0) {
+    // Mostrar error visual
+    let banner = document.getElementById('banner-validacion-' + paso);
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'banner-validacion-' + paso;
+      banner.className = 'val-banner warn show';
+      const secBody = document.querySelector('#sec-' + paso + ' .section-body');
+      if (secBody) secBody.insertBefore(banner, secBody.firstChild);
+    }
+    banner.className = 'val-banner warn show';
+    banner.innerHTML = '⚠ <span>Complete los siguientes campos antes de continuar: <strong>' + errores.join(', ') + '</strong></span>';
+    // Scroll al primer campo con error
+    banner.scrollIntoView({behavior: 'smooth', block: 'center'});
+    return false;
+  }
+
+  // Limpiar banner si existe
+  const banner = document.getElementById('banner-validacion-' + paso);
+  if (banner) banner.className = 'val-banner';
+  return true;
+}
+
+function nextStep() {
+  if (!validarPaso(currentStep)) return;
+  if (currentStep < 5) goStep(currentStep + 1);
+}
+function prevStep() {
+  if (currentStep > 1) goStep(currentStep - 1);
+}
+
+function setTipo(t) {
+  tipoVenta = t;
+  document.getElementById('btn-contado').className = 'tipo-btn' + (t === 'contado' ? ' active-contado' : '');
+  document.getElementById('btn-financiada').className = 'tipo-btn' + (t === 'financiada' ? ' active-financiada' : '');
+  document.getElementById('bloque-contado').style.display = t === 'contado' ? 'block' : 'none';
+  document.getElementById('bloque-financiada').style.display = t === 'financiada' ? 'block' : 'none';
+  calcular();
+}
+
+// Inicializar tipo
+setTipo('contado');
+initEquipos();
+
+// ===== UTILIDADES =====
+function fmt(n) {
+  if (isNaN(n) || n === null || n === undefined) return '—';
+  return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function esExentoITBMS() {
+  const el = document.getElementById('check-exento-itbms');
+  return el ? el.checked : false;
+}
+
+function esSinInteres() {
+  const el = document.getElementById('check-sin-interes');
+  return el ? el.checked : false;
+}
+
+function toggleSinInteres() {
+  const sinInteres = esSinInteres();
+  const hint = document.getElementById('hint-sin-interes');
+  const tasaDisplay = document.getElementById('tasa-display');
+  if (hint) hint.style.display = sinInteres ? 'block' : 'none';
+  if (tasaDisplay) tasaDisplay.value = sinInteres ? '0.00% (sin interés)' : '1.00%';
+  calcular();
+}
+
+// Conversión número a letras (español, USD)
+function numeroALetras(n) {
+  if (isNaN(n) || n < 0) return '';
+  n = Math.round(n * 100) / 100;
+  const entero = Math.floor(n);
+  const centavos = Math.round((n - entero) * 100);
+
+  const unidades = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
+    'diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve',
+    'veinte','veintiuno','veintidós','veintitrés','veinticuatro','veinticinco','veintiséis','veintisiete','veintiocho','veintinueve'];
+  const decenas = ['','','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  const centenas = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+
+  function convertirMenor1000(n) {
+    if (n === 0) return '';
+    if (n === 100) return 'cien';
+    if (n < 30) return unidades[n];
+    if (n < 100) {
+      const d = Math.floor(n / 10);
+      const u = n % 10;
+      return u === 0 ? decenas[d] : decenas[d] + ' y ' + unidades[u];
+    }
+    const c = Math.floor(n / 100);
+    const resto = n % 100;
+    return centenas[c] + (resto > 0 ? ' ' + convertirMenor1000(resto) : '');
+  }
+
+  function convertir(n) {
+    if (n === 0) return 'cero';
+    let resultado = '';
+    if (n >= 1000000) {
+      const m = Math.floor(n / 1000000);
+      resultado += (m === 1 ? 'un millón' : convertirMenor1000(m) + ' millones') + ' ';
+      n %= 1000000;
+    }
+    if (n >= 1000) {
+      const miles = Math.floor(n / 1000);
+      resultado += (miles === 1 ? 'mil' : convertirMenor1000(miles) + ' mil') + ' ';
+      n %= 1000;
+    }
+    if (n > 0) resultado += convertirMenor1000(n);
+    return resultado.trim();
+  }
+
+  const parteEntera = convertir(entero);
+  const sufijo = centavos > 0 ? ' con ' + convertir(centavos) + '/100' : ' exactos';
+  return (parteEntera.charAt(0).toUpperCase() + parteEntera.slice(1)) + ' dólares' + sufijo;
+}
+
+// ===== MÚLTIPLES EQUIPOS =====
+let equipoIdx = 0;
+
+function agregarEquipo() {
+  equipoIdx++;
+  const idx = equipoIdx;
+  const lista = document.getElementById('lista-equipos');
+  const div = document.createElement('div');
+  div.className = 'equipo-row';
+  div.dataset.idx = idx;
+  div.style.cssText = 'margin-bottom:12px;padding:12px;background:#fafafa;border:1px solid var(--border);border-radius:2px;position:relative;';
+  div.innerHTML = `
+    <button type="button" onclick="this.closest('.equipo-row').remove();calcular()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--accent);font-size:16px;">✕</button>
+    <div class="field-row">
+      <div class="field"><label>Modelo ${idx + 1}</label><input type="text" class="equipo-modelo" placeholder="Ej: Kyocera 2554ci" oninput="actualizarResumen()"></div>
+      <div class="field"><label>Precio lista (USD)</label><input type="number" class="equipo-lista" placeholder="0.00" step="0.01" min="0" oninput="calcular()"></div>
+      <div class="field"><label>Precio negociado (USD)</label><input type="number" class="equipo-precio" placeholder="0.00" step="0.01" min="0" oninput="calcular()"></div>
+    </div>`;
+  lista.appendChild(div);
+}
+
+function initEquipos() {
+  const lista = document.getElementById('lista-equipos');
+  lista.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'equipo-row';
+  div.dataset.idx = 0;
+  div.style.cssText = 'margin-bottom:12px;padding:12px;background:#fafafa;border:1px solid var(--border);border-radius:2px;';
+  div.innerHTML = `
+    <div class="field-row">
+      <div class="field"><label>Modelo del equipo</label><input type="text" class="equipo-modelo" placeholder="Ej: Kyocera 2554ci" oninput="actualizarResumen()"></div>
+      <div class="field"><label>Precio de lista (USD)</label><input type="number" class="equipo-lista" placeholder="0.00" step="0.01" min="0" oninput="calcular()"><div class="hint">Precio mínimo según lista</div></div>
+      <div class="field"><label>Precio negociado (USD)</label><input type="number" class="equipo-precio" placeholder="0.00" step="0.01" min="0" oninput="calcular()"></div>
+    </div>`;
+  lista.appendChild(div);
+}
+
+function getEquipos() {
+  const rows = document.querySelectorAll('.equipo-row');
+  return Array.from(rows).map(row => ({
+    modelo:     row.querySelector('.equipo-modelo')?.value.trim() || '',
+    lista:      parseFloat(row.querySelector('.equipo-lista')?.value) || 0,
+    precio:     parseFloat(row.querySelector('.equipo-precio')?.value) || 0,
+  }));
+}
+
+function getPrecioTotalNeto() {
+  return getEquipos().reduce((sum, e) => sum + (e.precio > 0 ? e.precio : e.lista), 0);
+}
+
+// ===== CALCULAR =====
+function calcular() {
+  const exento = esExentoITBMS();
+  const sinInteres = esSinInteres();
+  const ITBMS_RATE = exento ? 0 : 0.07;
+  const tasa = sinInteres ? 0 : 0.01;
+
+  const equipos = getEquipos();
+  const precioNetoTotal = equipos.reduce((s, e) => s + (e.precio > 0 ? e.precio : e.lista), 0);
+
+  // Validación precio (primer equipo)
+  const bannerPrecio = document.getElementById('banner-precio');
+  if (equipos.length > 0 && equipos[0].lista > 0 && equipos[0].precio > 0) {
+    if (equipos[0].precio < equipos[0].lista) {
+      bannerPrecio.className = 'val-banner warn show';
+      bannerPrecio.innerHTML = `⚠ <span>Precio negociado menor al de lista en equipo 1. Requiere autorización.</span>`;
+    } else {
+      bannerPrecio.className = 'val-banner ok show';
+      bannerPrecio.innerHTML = '✓ <span>Precio dentro del rango autorizado.</span>';
+    }
+  } else {
+    bannerPrecio.className = 'val-banner';
+  }
+
+  if (tipoVenta !== 'financiada') return;
+
+  const prima = parseFloat(document.getElementById('prima').value) || 0;
+  const plazo = parseInt(document.getElementById('plazo').value) || 0;
+
+  const itbmsEquipo = precioNetoTotal * ITBMS_RATE;
+  const precioConITBMS = precioNetoTotal + itbmsEquipo;
+  const saldo = precioConITBMS - prima;
+
+  const labelITBMS = exento ? 'Exento de ITBMS' : `+ ITBMS ${fmt(itbmsEquipo)}`;
+  document.getElementById('c-precio').textContent = fmt(precioNetoTotal) + ' ' + labelITBMS + ' = ' + fmt(precioConITBMS);
+  document.getElementById('c-prima').textContent = prima > 0 ? '- ' + fmt(prima) : '—';
+  document.getElementById('c-saldo').textContent = fmt(saldo);
+
+  const bannerFin = document.getElementById('banner-financiero');
+
+  if (saldo <= 0 && precioConITBMS > 0) {
+    bannerFin.className = 'val-banner warn show';
+    bannerFin.innerHTML = '⚠ <span>La prima es mayor o igual al precio total. Verifique los montos.</span>';
+    document.getElementById('c-factor').textContent = '—';
+    document.getElementById('c-total').textContent = '—';
+    document.getElementById('c-cuota').textContent = '—';
+    return;
+  }
+
+  if (plazo > 0 && saldo > 0) {
+    const factor = sinInteres ? 1 : (1 + tasa * plazo);
+    const totalPagar = saldo * factor;
+    const cuota = totalPagar / plazo;
+
+    document.getElementById('c-factor').textContent = sinInteres ? '1.00 (sin interés)' : factor.toFixed(4);
+    document.getElementById('c-total').textContent = fmt(totalPagar);
+    document.getElementById('c-cuota').textContent = fmt(cuota);
+
+    const notaSinInteres = sinInteres ? ' — SIN INTERÉS (sujeto a aprobación)' : '';
+    bannerFin.className = 'val-banner ok show';
+    bannerFin.innerHTML = `✓ <span>Subtotal equipos: <strong>${fmt(precioNetoTotal)}</strong>${exento ? ' (exento ITBMS)' : ' + ITBMS: <strong>' + fmt(itbmsEquipo) + '</strong>'} = <strong>${fmt(precioConITBMS)}</strong> — Prima: <strong>${fmt(prima)}</strong> — Saldo: <strong>${fmt(saldo)}</strong> — Total con interés: <strong>${fmt(totalPagar)}</strong>${notaSinInteres} — Cuota: <strong>${fmt(cuota)}</strong>/mes × ${plazo}</span>`;
+  } else {
+    document.getElementById('c-factor').textContent = '—';
+    document.getElementById('c-total').textContent = '—';
+    document.getElementById('c-cuota').textContent = '—';
+    bannerFin.className = 'val-banner';
+  }
+}
+
+function calcMant() {
+  const pagColor = parseFloat(document.getElementById('pag-color').value) || 0;
+  const precioColor = parseFloat(document.getElementById('precio-color').value) || 0;
+  const pagBN = parseFloat(document.getElementById('pag-bn').value) || 0;
+  const precioBN = parseFloat(document.getElementById('precio-bn').value) || 0;
+  const exento = esExentoITBMS();
+  const ITBMS_RATE = exento ? 0 : 0.07;
+
+  const subColor = pagColor * precioColor;
+  const subBN = pagBN * precioBN;
+  const totalNeto = subColor + subBN;
+  const itbmsMant = totalNeto * ITBMS_RATE;
+  const totalConITBMS = totalNeto + itbmsMant;
+
+  document.getElementById('sub-color').textContent = fmt(subColor);
+  document.getElementById('sub-bn').textContent = fmt(subBN);
+
+  document.getElementById('r-pag-color').textContent = pagColor.toLocaleString();
+  document.getElementById('r-precio-color').textContent = precioColor.toFixed(3);
+  document.getElementById('r-pag-bn').textContent = pagBN.toLocaleString();
+  document.getElementById('r-precio-bn').textContent = precioBN.toFixed(3);
+  document.getElementById('r-sub-color').textContent = fmt(subColor);
+  document.getElementById('r-sub-bn').textContent = fmt(subBN);
+  document.getElementById('r-total-mant').textContent = exento
+    ? fmt(totalNeto) + ' (exento ITBMS)'
+    : fmt(totalNeto) + ' + ITBMS ' + fmt(itbmsMant) + ' = ' + fmt(totalConITBMS);
+
+  const bannerMant = document.getElementById('banner-mant');
+  if (totalNeto === 0 && (pagColor > 0 || pagBN > 0)) {
+    bannerMant.className = 'val-banner warn show';
+    bannerMant.innerHTML = '⚠ <span>Verifique los precios por página.</span>';
+  } else if (totalNeto > 0) {
+    const label = exento
+      ? `<strong>${fmt(totalNeto)}</strong> (exento ITBMS)`
+      : `<strong>${fmt(totalNeto)}</strong> + ITBMS <strong>${fmt(itbmsMant)}</strong> = <strong>${fmt(totalConITBMS)}</strong>`;
+    bannerMant.className = 'val-banner ok show';
+    bannerMant.innerHTML = `✓ <span>Mantenimiento: ${label}/mes</span>`;
+  } else {
+    bannerMant.className = 'val-banner';
+  }
+}
+
+function toggleExpress() {
+  const checked = document.getElementById('check-express').checked;
+  document.getElementById('clausula-preview').className = 'clausula-box' + (checked ? ' show' : '');
+}
+
+const EMAILS_VENDEDORES = {
+  'Jorge Huerta':   'jhuerta@dupliriso.com',
+  'Ramon Icaza':    'ricaza@dupliriso.com',
+  'Orlando Chanis': 'ochanis@dupliriso.com',
+  'Sharin Polo':    'spolo@dupliriso.com',
+};
+
+function actualizarEmailVendedor() {
+  // solo actualiza internamente, no hay campo visible
+}
+
+function toggleFiadores() {
+  const show = document.getElementById('check-fiadores').checked;
+  document.getElementById('sec-fiadores').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('check-fiador2').checked = false;
+  toggleFiador2();
+}
+
+function toggleFiador2() {
+  const show = document.getElementById('check-fiadores').checked &&
+               document.getElementById('check-fiador2').checked;
+  document.getElementById('sec-fiador2').style.display = show ? 'block' : 'none';
+}
+
+function getCuotaEquipo() {
+  if (tipoVenta === 'contado') return 0;
+  const t = document.getElementById('c-cuota').textContent;
+  if (t === '—') return 0;
+  return parseFloat(t.replace('$', '').replace(',', '')) || 0;
+}
+
+function getTotalMant() {
+  const t = document.getElementById('r-total-mant').textContent;
+  if (t === '—') return 0;
+  return parseFloat(t.replace('$', '').replace(',', '')) || 0;
+}
+
+function buildResumen() {
+  document.getElementById('r-nombre').textContent = document.getElementById('nombre').value || '—';
+  document.getElementById('r-cedula').textContent = document.getElementById('cedula').value || '—';
+  document.getElementById('r-vendedor').textContent = document.getElementById('vendedor').value || '—';
+  const equipos = getEquipos();
+  const modeloText = equipos.map(e => e.modelo).filter(m=>m).join(' / ') || '—';
+  document.getElementById('r-modelo').textContent = modeloText;
+  const precioTotal = equipos.reduce((s,e) => s + (e.precio > 0 ? e.precio : e.lista), 0);
+  document.getElementById('r-precio-neg').textContent = precioTotal > 0 ? fmt(precioTotal) : '—';
+  document.getElementById('r-tipo').textContent = tipoVenta === 'contado' ? 'Contado' : 'Financiada';
+
+  const cuota = getCuotaEquipo();
+  const mant = getTotalMant();
+  const totalMensual = cuota + mant;
+
+  if (tipoVenta === 'financiada' && cuota > 0) {
+    document.getElementById('r-row-cuota').style.display = 'flex';
+    document.getElementById('r-cuota-fin').textContent = fmt(cuota);
+    document.getElementById('r-row-plazo').style.display = 'flex';
+    document.getElementById('r-plazo-fin').textContent = (document.getElementById('plazo').value || '—') + ' meses';
+  } else {
+    document.getElementById('r-row-cuota').style.display = 'none';
+    document.getElementById('r-row-plazo').style.display = 'none';
+  }
+
+  document.getElementById('r-mant-fin').textContent = mant > 0 ? fmt(mant) : '—';
+  document.getElementById('r-total-cliente').textContent = totalMensual > 0 ? fmt(totalMensual) : '—';
+
+  // Documentos
+  const docsList = document.getElementById('docs-list');
+  const express = document.getElementById('check-express').checked;
+  let docs = [];
+
+  docs.push({
+    icon: '📄',
+    name: 'Contrato de Mantenimiento',
+    desc: 'Con detalles de páginas, precio/página y cuota mensual',
+    badge: 'auto'
+  });
+
+  if (tipoVenta === 'financiada') {
+    docs.push({
+      icon: '📋',
+      name: 'Contrato de Retención de Dominio',
+      desc: express ? 'Con cláusula: Sujeto a aprobación crediticia' : 'Requiere aprobación del gerente',
+      badge: express ? 'auto' : 'pend'
+    });
+    docs.push({
+      icon: '📝',
+      name: 'Pagaré',
+      desc: express ? 'Con cláusula: Sujeto a aprobación crediticia' : 'Requiere aprobación del gerente',
+      badge: express ? 'auto' : 'pend'
+    });
+  }
+
+  docsList.innerHTML = docs.map(d => `
+    <div class="doc-item">
+      <span class="doc-icon">${d.icon}</span>
+      <div>
+        <div class="doc-name">${d.name}</div>
+        <div class="doc-desc">${d.desc}</div>
+      </div>
+      <span class="doc-badge ${d.badge === 'auto' ? 'badge-auto' : 'badge-pend'}">
+        ${d.badge === 'auto' ? '✓ Automático' : '⏳ Pendiente gerente'}
+      </span>
+    </div>
+  `).join('');
+
+  // Banner final
+  const bannerFinal = document.getElementById('banner-final');
+  const nombre = document.getElementById('nombre').value;
+  const cedula = document.getElementById('cedula').value;
+  const modelo = document.getElementById('modelo').value;
+
+  if (!nombre || !cedula || !modelo) {
+    bannerFinal.className = 'val-banner warn show';
+    bannerFinal.innerHTML = '⚠ <span>Faltan datos obligatorios: ' +
+      [!nombre && 'Nombre', !cedula && 'Cédula/RUC', !modelo && 'Modelo del equipo'].filter(Boolean).join(', ') + '</span>';
+  } else if (tipoVenta === 'financiada' && !express && getCuotaEquipo() === 0) {
+    bannerFinal.className = 'val-banner info show';
+    bannerFinal.innerHTML = '◎ <span>El financiamiento <strong>requiere autorización del gerente</strong> antes de generar los contratos de retención y pagaré.</span>';
+  } else {
+    bannerFinal.className = 'val-banner ok show';
+    bannerFinal.innerHTML = '✓ <span>Todo listo. Al enviar la orden, Make generará los contratos automáticamente.</span>';
+  }
+}
+
+function generarOrden() {
+  const nombre = document.getElementById('nombre').value;
+  const cedula = document.getElementById('cedula').value;
+  const equipos = getEquipos();
+  const primerModelo = equipos.length > 0 ? equipos[0].modelo : '';
+
+  if (!nombre || !cedula || equipos.length === 0 || !primerModelo) {
+    document.getElementById('banner-final').className = 'val-banner warn show';
+    document.getElementById('banner-final').innerHTML = '⚠ <span>Complete nombre, cédula y al menos un equipo antes de enviar.</span>';
+    return;
+  }
+
+  const express     = document.getElementById('check-express') ? document.getElementById('check-express').checked : false;
+  const exento      = esExentoITBMS();
+  const sinInteres  = esSinInteres();
+  const ITBMS_RATE  = exento ? 0 : 0.07;
+  const tasa        = sinInteres ? 0 : 0.01;
+
+  // Suma de todos los equipos
+  const precioNetoTotal   = +(equipos.reduce((s, e) => s + (e.precio > 0 ? e.precio : e.lista), 0)).toFixed(2);
+  const itbmsEquipo       = +(precioNetoTotal * ITBMS_RATE).toFixed(2);
+  const precioConITBMS    = +(precioNetoTotal + itbmsEquipo).toFixed(2);
+  const primaVal          = tipoVenta === 'financiada' ? (parseFloat(document.getElementById('prima').value) || 0) : 0;
+  const saldoBase         = +(precioConITBMS - primaVal).toFixed(2);
+  const plazoVal          = tipoVenta === 'financiada' ? (parseInt(document.getElementById('plazo').value) || 0) : 0;
+  const factor            = sinInteres ? 1 : (1 + tasa * plazoVal);
+  const saldoConInt       = plazoVal > 0 ? +(saldoBase * factor).toFixed(2) : saldoBase;
+  const cuotaEquipo       = plazoVal > 0 ? +(saldoConInt / plazoVal).toFixed(2) : 0;
+
+  const pagColor      = parseFloat(document.getElementById('pag-color').value) || 0;
+  const precioColor   = parseFloat(document.getElementById('precio-color').value) || 0;
+  const pagBN         = parseFloat(document.getElementById('pag-bn').value) || 0;
+  const precioBN      = parseFloat(document.getElementById('precio-bn').value) || 0;
+  const subtotalColor = +(pagColor * precioColor).toFixed(2);
+  const subtotalBN    = +(pagBN * precioBN).toFixed(2);
+  const mantNeto      = +(subtotalColor + subtotalBN).toFixed(2);
+  const itbmsMant     = +(mantNeto * ITBMS_RATE).toFixed(2);
+  const mantConITBMS  = +(mantNeto + itbmsMant).toFixed(2);
+  const cuota         = tipoVenta === 'financiada' ? cuotaEquipo : 0;
+  const mant          = mantConITBMS;
+
+  // Modelo para contrato (todos los equipos concatenados si hay varios)
+  const modeloContrato = equipos.map(e => e.modelo).filter(m => m).join(' / ');
+
+  const datos = {
+    fecha:              new Date().toLocaleDateString('es-PA'),
+    nombre:             nombre,
+    cliente:            nombre,
+    cedula:             cedula,
+    vendedor:           document.getElementById('vendedor').value,
+    emailVendedor:      EMAILS_VENDEDORES[document.getElementById('vendedor').value] || 'grubin@dupliriso.com',
+    email:              document.getElementById('email').value,
+    telefono:           document.getElementById('telefono').value,
+    direccion:          document.getElementById('direccion') ? document.getElementById('direccion').value : '',
+    modelo:             modeloContrato,
+    equipos:            equipos,
+    tipoCliente:        document.getElementById('tipo-cliente') ? document.getElementById('tipo-cliente').value : 'Natural',
+    tipoVenta:          tipoVenta,
+    // Precio con desglose ITBMS
+    exentoITBMS:        exento,
+    precioNegociado:    precioNetoTotal,
+    itbmsEquipo:        itbmsEquipo,
+    totalEquipoConITBMS: precioConITBMS,
+    // Letras
+    precioNegociadoLetras:    numeroALetras(precioNetoTotal),
+    totalEquipoConITBMSLetras: numeroALetras(precioConITBMS),
+    cuotaEquipoLetras:        cuotaEquipo > 0 ? numeroALetras(cuotaEquipo) : '',
+    saldoConInteresesLetras:  saldoConInt > 0 ? numeroALetras(saldoConInt) : '',
+    // Financiamiento
+    sinInteres:         sinInteres,
+    prima:              primaVal,
+    plazo:              plazoVal,
+    plazoLetras:        plazoVal > 0 ? numeroALetras(plazoVal).replace(' dólares exactos','').replace(' dólares','') + ' meses' : '',
+    saldoFinanciar:     saldoBase,
+    saldoConIntereses:  saldoConInt,
+    cuotaEquipo:        cuotaEquipo,
+    // Mantenimiento
+    pagColor:           pagColor,
+    precioColor:        precioColor,
+    subtotalColor:      subtotalColor,
+    pagBN:              pagBN,
+    precioBN:           precioBN,
+    subtotalBN:         subtotalBN,
+    mantenimientoNeto:      mantNeto,
+    itbmsMantenimiento:     itbmsMant,
+    mantenimientoMensual:   mantConITBMS,
+    totalMensual:       +(cuota + mant).toFixed(2),
+    aprobacionExpress:  express,
+    // Fecha en español
+    diaFirma:           new Date().getDate(),
+    mesMesEsp:          ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][new Date().getMonth()],
+    anioFirma:          new Date().getFullYear(),
+    numeroContrato:     'MANT-' + cedula + '-' + new Date().toISOString().slice(0,10).replace(/-/g,''),
+  };
+
+  // Fiadores (solo financiada)
+  if (tipoVenta === 'financiada') {
+    const tieneFiador = document.getElementById('check-fiadores').checked;
+    datos.tieneFiador = tieneFiador;
+    if (tieneFiador) {
+      const f1nombre = document.getElementById('fiador1-nombre').value.trim();
+      const f1cedula = document.getElementById('fiador1-cedula').value.trim();
+      const f1dir    = document.getElementById('fiador1-direccion').value.trim();
+      const f1estado = document.getElementById('fiador1-estado').value;
+      datos.fiador1_nombre    = f1nombre;
+      datos.fiador1_cedula    = f1cedula;
+      datos.fiador1_direccion = f1dir;
+      datos.fiador1_estado    = f1estado;
+      // fiador_intro para insertar en el contrato
+      datos.fiador_intro = f1nombre
+        ? `, y como FIADOR SOLIDARIO ${f1nombre}, ${f1estado}, mayor de edad, cédula ${f1cedula}, domicilio ${f1dir}`
+        : '';
+
+      const tieneFiador2 = document.getElementById('check-fiador2').checked;
+      datos.tieneFiador2 = tieneFiador2;
+      if (tieneFiador2) {
+        const f2nombre = document.getElementById('fiador2-nombre').value.trim();
+        const f2cedula = document.getElementById('fiador2-cedula').value.trim();
+        const f2dir    = document.getElementById('fiador2-direccion').value.trim();
+        const f2estado = document.getElementById('fiador2-estado').value;
+        datos.fiador2_nombre    = f2nombre;
+        datos.fiador2_cedula    = f2cedula;
+        datos.fiador2_direccion = f2dir;
+        datos.fiador2_estado    = f2estado;
+        datos.fiador_intro += f2nombre
+          ? `, y como SEGUNDO FIADOR SOLIDARIO ${f2nombre}, ${f2estado}, mayor de edad, cédula ${f2cedula}, domicilio ${f2dir}`
+          : '';
+      }
+    } else {
+      datos.fiador_intro = '';
+      datos.fiador1_nombre = '';
+      datos.fiador1_cedula = '';
+      datos.fiador1_direccion = '';
+    }
+  }
+
+  // Webhooks separados por tipo de venta — sin router, sin filtros
+  const WEBHOOK_CONTADO    = 'https://hook.us2.make.com/5vg22lt847ax1d57pykdrmul14i5btbu';
+  const WEBHOOK_FINANCIADA_EXPRESS = 'https://hook.us2.make.com/nc894mlncex5m79mjs4r1j8908joxybr';
+  const WEBHOOK_FINANCIADA = 'https://hook.us2.make.com/cdkdheilojakcn9iaq56vdwqquo6dsa5';
+
+  let webhookUrl;
+  if (tipoVenta === 'contado') {
+    webhookUrl = WEBHOOK_CONTADO;
+  } else if (express) {
+    webhookUrl = WEBHOOK_FINANCIADA_EXPRESS;
+  } else {
+    webhookUrl = WEBHOOK_FINANCIADA;
+  }
+
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos)
+  }).then(r => r.text()).then(resp => console.log('Make response:', resp)).catch(err => console.error('Error:', err));
+
+  document.getElementById('msg-enviado').style.display = 'block';
+  let textoMsg;
+  if (tipoVenta === 'contado') {
+    textoMsg = `✅ Orden contado enviada. El Contrato de Mantenimiento se generará automáticamente y llegará a tu correo en segundos.`;
+  } else if (express) {
+    textoMsg = `📋 Orden financiada enviada con Aprobación Express. Los contratos tienen la cláusula "Sujeto a aprobación crediticia". El gerente recibirá los documentos para revisión APC.`;
+  } else {
+    textoMsg = `🔶 Orden financiada enviada. El gerente recibirá los documentos del cliente para verificar en APC y aprobar. Los contratos se generarán al ser aprobada.`;
+  }
+  document.getElementById('msg-enviado-texto').textContent = textoMsg;
+
+  document.querySelector('.btn-generate').disabled = true;
+  document.querySelector('.btn-generate').textContent = '✓ Orden Enviada';
+  document.querySelector('.btn-generate').style.background = 'var(--green)';
+}
+</script>
+</body>
+</html>
