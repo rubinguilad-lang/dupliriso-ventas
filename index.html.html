@@ -768,6 +768,17 @@ function validarPaso(paso) {
       errores.push('Precio del equipo');
   }
 
+  if (paso === 3) {
+    if (tipoVenta === 'financiada') {
+      const plazo = parseInt(document.getElementById('plazo').value) || 0;
+      const prima = parseFloat(document.getElementById('prima').value) || 0;
+      if (plazo <= 0)
+        errores.push('Plazo en meses');
+      if (prima < 0)
+        errores.push('Prima inicial');
+    }
+  }
+
   if (paso === 4) {
     const pagColor = parseFloat(document.getElementById('pag-color').value) || 0;
     const pagBN = parseFloat(document.getElementById('pag-bn').value) || 0;
@@ -1190,12 +1201,22 @@ function buildResumen() {
 }
 
 function generarOrden() {
-  const nombre = document.getElementById('nombre').value;
-  const cedula = document.getElementById('cedula').value;
+  // Validar todos los pasos antes de enviar
+  const pasosAValidar = tipoVenta === 'financiada' ? [1, 2, 3, 4] : [1, 2, 4];
+  for (const paso of pasosAValidar) {
+    if (!validarPaso(paso)) {
+      // Ir al paso con error
+      goStep(paso);
+      return;
+    }
+  }
+
+  const nombre = document.getElementById('nombre').value.trim();
+  const cedula = document.getElementById('cedula').value.trim();
   const equipos = getEquipos();
   const primerModelo = equipos.length > 0 ? equipos[0].modelo : '';
 
-  if (!nombre || !cedula || equipos.length === 0 || !primerModelo) {
+  if (!nombre || !cedula || !primerModelo) {
     document.getElementById('banner-final').className = 'val-banner warn show';
     document.getElementById('banner-final').innerHTML = '⚠ <span>Complete nombre, cédula y al menos un equipo antes de enviar.</span>';
     return;
