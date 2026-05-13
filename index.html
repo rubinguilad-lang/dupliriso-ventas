@@ -310,6 +310,7 @@
 </head>
 <body>
 
+<div id="banner-login" style="display:none;padding:8px 16px;background:#fff;border-bottom:1px solid var(--border);text-align:right;"></div>
 <div class="header">
   <div>
     <div class="header-logo">Orden de Pedido</div>
@@ -357,8 +358,16 @@
       </div>
       <div class="field-row full">
         <div class="field">
-          <label>Dirección / Zona</label>
-          <input type="text" id="direccion" placeholder="Ej: Vía España, Ciudad de Panamá">
+          <label>Dirección del cliente</label>
+          <input type="text" id="direccion" placeholder="Empiece a escribir la dirección..." autocomplete="off">
+          <div class="hint">Seleccione del autocompletado de Google Maps</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Dirección de instalación del equipo</label>
+          <input type="text" id="direccion-instalacion" placeholder="¿Dónde se instala el equipo?" autocomplete="off">
+          <div class="hint">Si es igual a la dirección del cliente, puede copiarla</div>
         </div>
       </div>
       <div class="field-row">
@@ -693,8 +702,9 @@
       <div id="msg-enviado" style="display:none;margin-top:16px;">
         <div class="val-banner ok show">
           <span>✓</span>
-          <span id="msg-enviado-texto">Orden enviada correctamente. Los contratos se generarán automáticamente en Make y serán enviados por WhatsApp/email.</span>
+          <span id="msg-enviado-texto">Orden enviada correctamente. Los contratos se generarán automáticamente y serán enviados por correo.</span>
         </div>
+        <button onclick="nuevoContrato()" style="margin-top:16px;width:100%;padding:14px;background:#1a1714;color:#fff;border:none;border-radius:2px;font-size:14px;font-family:var(--mono);cursor:pointer;letter-spacing:1px;">+ Crear nuevo contrato</button>
       </div>
 
     </div>
@@ -1100,6 +1110,29 @@ function toggleFiador2() {
   document.getElementById('sec-fiador2').style.display = show ? 'block' : 'none';
 }
 
+function nuevoContrato() {
+  // Ocultar mensaje de enviado
+  document.getElementById('msg-enviado').style.display = 'none';
+  // Limpiar todos los campos
+  document.querySelectorAll('input[type=text], input[type=number], input[type=email], input[type=tel], textarea').forEach(el => el.value = '');
+  document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+  document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+  // Reiniciar equipos
+  equipoIdx = 0;
+  initEquipos();
+  // Reiniciar tipo de venta
+  setTipo('contado');
+  // Ocultar secciones condicionales
+  document.getElementById('sec-fiadores').style.display = 'none';
+  document.getElementById('sec-fiador2').style.display = 'none';
+  // Limpiar banners
+  document.querySelectorAll('.val-banner').forEach(el => el.className = 'val-banner');
+  // Volver al paso 1
+  goStep(1);
+  // Scroll al inicio
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
 function getCuotaEquipo() {
   if (tipoVenta === 'contado') return 0;
   const t = document.getElementById('c-cuota').textContent;
@@ -1264,6 +1297,24 @@ function generarOrden() {
     email:              document.getElementById('email').value,
     telefono:           document.getElementById('telefono').value,
     direccion:          document.getElementById('direccion') ? document.getElementById('direccion').value : '',
+    direccionInstalacion: document.getElementById('direccion-instalacion') ? document.getElementById('direccion-instalacion').value : '',
+    // Datos estructurados Google Maps
+    ...(window._dirCliente ? {
+      clienteCorregimiento: window._dirCliente.corregimiento,
+      clienteDistrito:      window._dirCliente.distrito,
+      clienteProvincia:     window._dirCliente.provincia,
+      clienteLatitud:       window._dirCliente.latitud,
+      clienteLongitud:      window._dirCliente.longitud,
+      clientePlaceId:       window._dirCliente.place_id,
+    } : {}),
+    ...(window._dirInstalacion ? {
+      instalacionCorregimiento: window._dirInstalacion.corregimiento,
+      instalacionDistrito:      window._dirInstalacion.distrito,
+      instalacionProvincia:     window._dirInstalacion.provincia,
+      instalacionLatitud:       window._dirInstalacion.latitud,
+      instalacionLongitud:      window._dirInstalacion.longitud,
+      instalacionPlaceId:       window._dirInstalacion.place_id,
+    } : {}),
     modelo:             modeloContrato,
     equipos:            equipos,
     tipoCliente:        document.getElementById('tipo-cliente') ? document.getElementById('tipo-cliente').value : 'Natural',
@@ -1382,5 +1433,95 @@ function generarOrden() {
   document.querySelector('.btn-generate').style.background = 'var(--green)';
 }
 </script>
+<!-- Microsoft 365 Login -->
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<script>
+(function() {
+  const MSAL_CONFIG = {
+    auth: {
+      clientId: "c3789c6e-3bd6-45dc-8cb9-a020e413864b",
+      authority: "https://login.microsoftonline.com/dd50eef5-48e1-4a4a-99ab-d91ae68cb489",
+      redirectUri: "https://ventas.dupliriso.com"
+    },
+    cache: { cacheLocation: "sessionStorage" }
+  };
+
+  window.msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+  window.usuarioLogueado = null;
+
+  async function initLogin() {
+    await window.msalInstance.initialize();
+    try {
+      const response = await window.msalInstance.handleRedirectPromise();
+      if (response) window.usuarioLogueado = response.account;
+    } catch(e) {}
+
+    const accounts = window.msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      window.usuarioLogueado = accounts[0];
+      mostrarUsuario();
+    } else {
+      window.msalInstance.loginRedirect({ scopes: ["User.Read"] });
+    }
+  }
+
+  function mostrarUsuario() {
+    if (!window.usuarioLogueado) return;
+    const nombre = window.usuarioLogueado.name || window.usuarioLogueado.username;
+    const email = window.usuarioLogueado.username;
+    const banner = document.getElementById('banner-login');
+    if (banner) {
+      banner.innerHTML = `<span style="font-size:12px;">👤 <strong>${nombre}</strong> <span style="color:var(--gold)">(${email})</span> &nbsp;|&nbsp; <a href="#" onclick="window.msalInstance.logoutRedirect();return false;" style="color:var(--accent);text-decoration:none;font-size:11px;">Cerrar sesión</a></span>`;
+      banner.style.display = 'block';
+    }
+    // Auto-seleccionar vendedor según email
+    const emailMap = {
+      'jhuerta@dupliriso.com': 'Jorge Huerta',
+      'ricaza@dupliriso.com': 'Ramon Icaza',
+      'ochanis@dupliriso.com': 'Orlando Chanis',
+      'spolo@dupliriso.com': 'Sharin Polo'
+    };
+    const sel = document.getElementById('vendedor');
+    if (sel && emailMap[email.toLowerCase()]) {
+      sel.value = emailMap[email.toLowerCase()];
+    }
+  }
+
+  initLogin();
+})();
+</script>
+
+<!-- Google Maps -->
+<script>
+function initMaps() {
+  const opts = { componentRestrictions: { country: 'pa' }, fields: ['address_components', 'formatted_address', 'geometry', 'place_id'] };
+
+  const acCliente = new google.maps.places.Autocomplete(document.getElementById('direccion'), opts);
+  acCliente.addListener('place_changed', () => {
+    const place = acCliente.getPlace();
+    if (place.geometry) window._dirCliente = extraerDir(place);
+  });
+
+  const acInst = new google.maps.places.Autocomplete(document.getElementById('direccion-instalacion'), opts);
+  acInst.addListener('place_changed', () => {
+    const place = acInst.getPlace();
+    if (place.geometry) window._dirInstalacion = extraerDir(place);
+  });
+}
+
+function extraerDir(place) {
+  const get = t => (place.address_components.find(c => c.types.includes(t)) || {}).long_name || '';
+  return {
+    formateada:    place.formatted_address,
+    corregimiento: get('administrative_area_level_3') || get('locality'),
+    distrito:      get('administrative_area_level_2'),
+    provincia:     get('administrative_area_level_1'),
+    latitud:       place.geometry.location.lat(),
+    longitud:      place.geometry.location.lng(),
+    place_id:      place.place_id
+  };
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7mAMsz2T5RPDjcyE083RfZW8Ff6Nmg_Q&libraries=places&callback=initMaps" async defer></script>
 </body>
 </html>
