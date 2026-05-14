@@ -349,6 +349,7 @@
           <label>Vendedor</label>
           <select id="vendedor" onchange="actualizarEmailVendedor()">
             <option value="">— Seleccionar —</option>
+            <option value="Guilad Rubin">Guilad Rubin</option>
             <option value="Jorge Huerta">Jorge Huerta</option>
             <option value="Ramon Icaza">Ramon Icaza</option>
             <option value="Orlando Chanis">Orlando Chanis</option>
@@ -1192,6 +1193,7 @@ function toggleExpress() {
 }
 
 const EMAILS_VENDEDORES = {
+  'Guilad Rubin':   'grubin@dupliriso.com',
   'Jorge Huerta':   'jhuerta@dupliriso.com',
   'Ramon Icaza':    'ricaza@dupliriso.com',
   'Orlando Chanis': 'ochanis@dupliriso.com',
@@ -1613,10 +1615,11 @@ function generarOrden() {
     }
     // Auto-seleccionar vendedor según email
     const emailMap = {
-      'jhuerta@dupliriso.com': 'Jorge Huerta',
-      'ricaza@dupliriso.com': 'Ramon Icaza',
-      'ochanis@dupliriso.com': 'Orlando Chanis',
-      'spolo@dupliriso.com': 'Sharin Polo'
+      'grubin@dupliriso.com':   'Guilad Rubin',
+      'jhuerta@dupliriso.com':  'Jorge Huerta',
+      'ricaza@dupliriso.com':   'Ramon Icaza',
+      'ochanis@dupliriso.com':  'Orlando Chanis',
+      'spolo@dupliriso.com':    'Sharin Polo'
     };
     const sel = document.getElementById('vendedor');
     if (sel && emailMap[email.toLowerCase()]) {
