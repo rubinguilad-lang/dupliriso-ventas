@@ -1224,6 +1224,12 @@ function nuevoContrato() {
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
+function fmtContrato(n) {
+  // Formato para contratos: 5,029.00
+  if (isNaN(n) || n === null) return '0.00';
+  return n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
 function getCuotaEquipo() {
   if (tipoVenta === 'contado') return 0;
   const t = document.getElementById('c-cuota').textContent;
@@ -1380,9 +1386,10 @@ function generarOrden() {
 
   const datos = {
     fecha:              new Date().toLocaleDateString('es-PA'),
-    nombre:             nombre,
-    cliente:            nombre,
-    cedula:             cedula,
+    nombre:             getNombreRepresentante(),   // nombre del representante para contratos
+    nombreSociedad:     getNombreCliente(),          // razón social si aplica
+    cliente:            getNombreCliente(),          // razón social o nombre natural
+    cedula:             getCedulaCliente(),          // RUC o cédula
     vendedor:           document.getElementById('vendedor').value,
     emailVendedor:      EMAILS_VENDEDORES[document.getElementById('vendedor').value] || 'grubin@dupliriso.com',
     email:              document.getElementById('email').value,
@@ -1416,35 +1423,35 @@ function generarOrden() {
     y_en_representacion_de:     getTextoRepresentante(),
     razonSocial:                tipoCliente !== 'Persona Natural' ? (document.getElementById('razon-social')?.value.trim() || '') : '',
     rucEmpresa:                 tipoCliente !== 'Persona Natural' ? (document.getElementById('ruc-empresa')?.value.trim() || '') : '',
-    // Precio con desglose ITBMS
+    // Precio con desglose ITBMS — con decimales y comas
     exentoITBMS:        exento,
-    precioNegociado:    precioNetoTotal,
-    itbmsEquipo:        itbmsEquipo,
-    totalEquipoConITBMS: precioConITBMS,
-    // Letras
+    precioNegociado:    fmtContrato(precioNetoTotal),
+    itbmsEquipo:        fmtContrato(itbmsEquipo),
+    totalEquipoConITBMS: fmtContrato(precioConITBMS),
+    // Letras con centavos correctos
     precioNegociadoLetras:    numeroALetras(precioNetoTotal),
     totalEquipoConITBMSLetras: numeroALetras(precioConITBMS),
     cuotaEquipoLetras:        cuotaEquipo > 0 ? numeroALetras(cuotaEquipo) : '',
     saldoConInteresesLetras:  saldoConInt > 0 ? numeroALetras(saldoConInt) : '',
     // Financiamiento
     sinInteres:         sinInteres,
-    prima:              primaVal,
+    prima:              fmtContrato(primaVal),
     plazo:              plazoVal,
     plazoLetras:        plazoVal > 0 ? numeroALetras(plazoVal).replace(' dólares exactos','').replace(' dólares','') + ' meses' : '',
-    saldoFinanciar:     saldoBase,
-    saldoConIntereses:  saldoConInt,
-    cuotaEquipo:        cuotaEquipo,
+    saldoFinanciar:     fmtContrato(saldoBase),
+    saldoConIntereses:  fmtContrato(saldoConInt),
+    cuotaEquipo:        fmtContrato(cuotaEquipo),
     // Mantenimiento
     pagColor:           pagColor,
-    precioColor:        precioColor,
-    subtotalColor:      subtotalColor,
+    precioColor:        precioColor.toFixed(3),
+    subtotalColor:      fmtContrato(subtotalColor),
     pagBN:              pagBN,
-    precioBN:           precioBN,
-    subtotalBN:         subtotalBN,
-    mantenimientoNeto:      mantNeto,
-    itbmsMantenimiento:     itbmsMant,
-    mantenimientoMensual:   mantConITBMS,
-    totalMensual:       +(cuota + mant).toFixed(2),
+    precioBN:           precioBN.toFixed(3),
+    subtotalBN:         fmtContrato(subtotalBN),
+    mantenimientoNeto:      fmtContrato(mantNeto),
+    itbmsMantenimiento:     fmtContrato(itbmsMant),
+    mantenimientoMensual:   fmtContrato(mantConITBMS),
+    totalMensual:       fmtContrato(+(cuota + mant).toFixed(2)),
     aprobacionExpress:  express,
     // Fecha en español
     diaFirma:           new Date().getDate(),
