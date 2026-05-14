@@ -340,7 +340,6 @@
         <div class="field">
           <label>Tipo de cliente</label>
           <select id="tipo-cliente" onchange="toggleTipoCliente()">
-            <option value="">— Seleccionar —</option>
             <option value="Persona Natural">Persona Natural</option>
             <option value="Sociedad Anónima">Sociedad Anónima</option>
             <option value="Gobierno / Institución">Gobierno / Institución</option>
@@ -788,8 +787,6 @@ function validarPaso(paso) {
     const tipo = document.getElementById('tipo-cliente').value;
     const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
 
-    if (!tipo) errores.push('Tipo de cliente');
-
     if (esJuridica) {
       if (!document.getElementById('rep-nombre').value.trim())
         errores.push('Nombre del representante legal');
@@ -915,6 +912,10 @@ function toggleTipoCliente() {
   document.getElementById('sec-natural').style.display = esJuridica ? 'none' : 'block';
   document.getElementById('sec-juridica').style.display = esJuridica ? 'block' : 'none';
 }
+// Inicializar al cargar — por defecto Persona Natural
+document.addEventListener('DOMContentLoaded', function() {
+  toggleTipoCliente();
+});
 
 function getNombreCliente() {
   const tipo = document.getElementById('tipo-cliente').value;
@@ -1337,14 +1338,15 @@ function buildResumen() {
 
   // Banner final
   const bannerFinal = document.getElementById('banner-final');
-  const nombre = document.getElementById('nombre').value;
-  const cedula = document.getElementById('cedula').value;
-  const modelo = document.getElementById('modelo').value;
+  const nombreCheck = getNombreRepresentante();
+  const cedulaCheck = getCedulaCliente();
+  const equiposCheck = getEquipos();
+  const modeloCheck = equiposCheck.length > 0 ? equiposCheck[0].modelo : '';
 
-  if (!nombre || !cedula || !modelo) {
+  if (!nombreCheck || !cedulaCheck || !modeloCheck) {
     bannerFinal.className = 'val-banner warn show';
     bannerFinal.innerHTML = '⚠ <span>Faltan datos obligatorios: ' +
-      [!nombre && 'Nombre', !cedula && 'Cédula/RUC', !modelo && 'Modelo del equipo'].filter(Boolean).join(', ') + '</span>';
+      [!nombreCheck && 'Nombre', !cedulaCheck && 'Cédula/RUC', !modeloCheck && 'Modelo del equipo'].filter(Boolean).join(', ') + '</span>';
   } else if (tipoVenta === 'financiada' && !express && getCuotaEquipo() === 0) {
     bannerFinal.className = 'val-banner info show';
     bannerFinal.innerHTML = '◎ <span>El financiamiento <strong>requiere autorización del gerente</strong> antes de generar los contratos de retención y pagaré.</span>';
