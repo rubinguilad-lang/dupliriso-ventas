@@ -396,9 +396,7 @@
             <input type="text" id="ruc-empresa" placeholder="Ej: 155675259-2-2019 DV61">
           </div>
         </div>
-        <!-- Campos ocultos para compatibilidad con el resto del formulario -->
-        <input type="hidden" id="nombre">
-        <input type="hidden" id="cedula">
+        <!-- fin sec-juridica -->
       </div>
 
       <div class="field-row">
@@ -787,20 +785,35 @@ function validarPaso(paso) {
   const errores = [];
 
   if (paso === 1) {
-    if (!document.getElementById('nombre').value.trim())
-      errores.push('Nombre completo / Razón social');
-    if (!document.getElementById('cedula').value.trim())
-      errores.push('Cédula / RUC');
+    const tipo = document.getElementById('tipo-cliente').value;
+    const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+
+    if (!tipo) errores.push('Tipo de cliente');
+
+    if (esJuridica) {
+      if (!document.getElementById('rep-nombre').value.trim())
+        errores.push('Nombre del representante legal');
+      if (!document.getElementById('rep-cedula').value.trim())
+        errores.push('Cédula del representante');
+      if (!document.getElementById('razon-social').value.trim())
+        errores.push('Razón social');
+      if (!document.getElementById('ruc-empresa').value.trim())
+        errores.push('RUC / Ficha');
+    } else {
+      if (!document.getElementById('nombre').value.trim())
+        errores.push('Nombre completo');
+      if (!document.getElementById('cedula').value.trim())
+        errores.push('Cédula');
+    }
+
     if (!document.getElementById('telefono').value.trim())
       errores.push('Teléfono');
     if (!document.getElementById('email').value.trim())
       errores.push('Correo electrónico');
     if (!document.getElementById('direccion').value.trim())
-      errores.push('Dirección / Zona');
+      errores.push('Dirección');
     if (!document.getElementById('vendedor').value)
       errores.push('Vendedor');
-    if (!document.getElementById('tipo-cliente').value)
-      errores.push('Tipo de cliente');
   }
 
   if (paso === 2) {
