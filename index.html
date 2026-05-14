@@ -1257,8 +1257,19 @@ function getTotalMant() {
 }
 
 function buildResumen() {
-  document.getElementById('r-nombre').textContent = document.getElementById('nombre').value || '—';
-  document.getElementById('r-cedula').textContent = document.getElementById('cedula').value || '—';
+  const nombreRep = getNombreRepresentante();
+  const nombreCliente = getNombreCliente();
+  const cedula = getCedulaCliente();
+  const cedulaRep = getCedulaRepresentante();
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+
+  document.getElementById('r-nombre').textContent = esJuridica
+    ? (nombreRep + (nombreCliente ? ' — ' + nombreCliente : ''))
+    : (nombreRep || '—');
+  document.getElementById('r-cedula').textContent = esJuridica
+    ? (cedulaRep + (cedula ? ' / RUC: ' + cedula : ''))
+    : (cedula || '—');
   document.getElementById('r-vendedor').textContent = document.getElementById('vendedor').value || '—';
   const equipos = getEquipos();
   const modeloText = equipos.map(e => e.modelo).filter(m=>m).join(' / ') || '—';
@@ -1344,11 +1355,11 @@ function buildResumen() {
 }
 
 function generarOrden() {
+  try {
   // Validar todos los pasos antes de enviar
   const pasosAValidar = tipoVenta === 'financiada' ? [1, 2, 3, 4] : [1, 2, 4];
   for (const paso of pasosAValidar) {
     if (!validarPaso(paso)) {
-      // Ir al paso con error
       goStep(paso);
       return;
     }
@@ -1548,6 +1559,12 @@ function generarOrden() {
   document.querySelector('.btn-generate').disabled = true;
   document.querySelector('.btn-generate').textContent = '✓ Orden Enviada';
   document.querySelector('.btn-generate').style.background = 'var(--green)';
+
+  } catch(err) {
+    console.error('Error en generarOrden:', err);
+    document.getElementById('banner-final').className = 'val-banner warn show';
+    document.getElementById('banner-final').innerHTML = '⚠ <span>Error inesperado: ' + err.message + '</span>';
+  }
 }
 </script>
 <!-- Microsoft 365 Login -->
