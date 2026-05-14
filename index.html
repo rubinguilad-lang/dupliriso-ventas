@@ -338,14 +338,69 @@
     <div class="section-body">
       <div class="field-row">
         <div class="field">
-          <label>Nombre completo / Razón social</label>
-          <input type="text" id="nombre" placeholder="Ej: Juan Pérez o Empresa S.A.">
+          <label>Tipo de cliente</label>
+          <select id="tipo-cliente" onchange="toggleTipoCliente()">
+            <option value="">— Seleccionar —</option>
+            <option value="Persona Natural">Persona Natural</option>
+            <option value="Sociedad Anónima">Sociedad Anónima</option>
+            <option value="Gobierno / Institución">Gobierno / Institución</option>
+          </select>
         </div>
         <div class="field">
-          <label>Cédula / RUC</label>
-          <input type="text" id="cedula" placeholder="Ej: 8-888-888">
+          <label>Vendedor</label>
+          <select id="vendedor" onchange="actualizarEmailVendedor()">
+            <option value="">— Seleccionar —</option>
+            <option value="Jorge Huerta">Jorge Huerta</option>
+            <option value="Ramon Icaza">Ramon Icaza</option>
+            <option value="Orlando Chanis">Orlando Chanis</option>
+            <option value="Sharin Polo">Sharin Polo</option>
+          </select>
         </div>
       </div>
+
+      <!-- Persona Natural -->
+      <div id="sec-natural">
+        <div class="field-row">
+          <div class="field">
+            <label>Nombre completo</label>
+            <input type="text" id="nombre" placeholder="Ej: Juan Pérez">
+          </div>
+          <div class="field">
+            <label>Cédula de identidad</label>
+            <input type="text" id="cedula" placeholder="Ej: 8-888-888">
+          </div>
+        </div>
+      </div>
+
+      <!-- Persona Jurídica -->
+      <div id="sec-juridica" style="display:none;">
+        <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;margin-top:4px;">Representante Legal</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nombre del representante legal</label>
+            <input type="text" id="rep-nombre" placeholder="Ej: Raanan Ovadia Tibi">
+          </div>
+          <div class="field">
+            <label>Cédula del representante</label>
+            <input type="text" id="rep-cedula" placeholder="Ej: N-19-453">
+          </div>
+        </div>
+        <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;margin-top:12px;">Empresa</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Razón social</label>
+            <input type="text" id="razon-social" placeholder="Ej: Nanimarketing S.A.">
+          </div>
+          <div class="field">
+            <label>RUC / Ficha</label>
+            <input type="text" id="ruc-empresa" placeholder="Ej: 155675259-2-2019 DV61">
+          </div>
+        </div>
+        <!-- Campos ocultos para compatibilidad con el resto del formulario -->
+        <input type="hidden" id="nombre">
+        <input type="hidden" id="cedula">
+      </div>
+
       <div class="field-row">
         <div class="field">
           <label>Teléfono</label>
@@ -368,27 +423,6 @@
           <label>Dirección de instalación del equipo</label>
           <input type="text" id="direccion-instalacion" placeholder="¿Dónde se instala el equipo?" autocomplete="off">
           <div class="hint">Si es igual a la dirección del cliente, puede copiarla</div>
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Vendedor</label>
-          <select id="vendedor" onchange="actualizarEmailVendedor()">
-            <option value="">— Seleccionar —</option>
-            <option value="Jorge Huerta">Jorge Huerta</option>
-            <option value="Ramon Icaza">Ramon Icaza</option>
-            <option value="Orlando Chanis">Orlando Chanis</option>
-            <option value="Sharin Polo">Sharin Polo</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Tipo de cliente</label>
-          <select id="tipo-cliente">
-            <option value="">— Seleccionar —</option>
-            <option>Persona natural</option>
-            <option>Sociedad Anónima</option>
-            <option>Gobierno / Institución</option>
-          </select>
         </div>
       </div>
     </div>
@@ -862,6 +896,63 @@ function esSinInteres() {
   return el ? el.checked : false;
 }
 
+function toggleTipoCliente() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  document.getElementById('sec-natural').style.display = esJuridica ? 'none' : 'block';
+  document.getElementById('sec-juridica').style.display = esJuridica ? 'block' : 'none';
+}
+
+function getNombreCliente() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) {
+    return document.getElementById('razon-social')?.value.trim() || '';
+  }
+  return document.getElementById('nombre')?.value.trim() || '';
+}
+
+function getCedulaCliente() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) {
+    return document.getElementById('ruc-empresa')?.value.trim() || '';
+  }
+  return document.getElementById('cedula')?.value.trim() || '';
+}
+
+function getTextoRepresentante() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) {
+    const repNombre = document.getElementById('rep-nombre')?.value.trim() || '';
+    const repCedula = document.getElementById('rep-cedula')?.value.trim() || '';
+    const razonSocial = document.getElementById('razon-social')?.value.trim() || '';
+    const ruc = document.getElementById('ruc-empresa')?.value.trim() || '';
+    // Texto para y_en_representacion_de
+    return ` y en representación de la Sociedad ${razonSocial} con RUC ${ruc}`;
+  }
+  return '';
+}
+
+function getNombreRepresentante() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) {
+    return document.getElementById('rep-nombre')?.value.trim() || '';
+  }
+  return document.getElementById('nombre')?.value.trim() || '';
+}
+
+function getCedulaRepresentante() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) {
+    return document.getElementById('rep-cedula')?.value.trim() || '';
+  }
+  return document.getElementById('cedula')?.value.trim() || '';
+}
+
 function toggleSinInteres() {
   const sinInteres = esSinInteres();
   const hint = document.getElementById('hint-sin-interes');
@@ -916,7 +1007,7 @@ function numeroALetras(n) {
   }
 
   const parteEntera = convertir(entero);
-  const sufijo = centavos > 0 ? ' con ' + convertir(centavos) + '/100' : ' exactos';
+  const sufijo = centavos > 0 ? ' con ' + String(centavos).padStart(2, '0') + '/100' : ' exactos';
   return (parteEntera.charAt(0).toUpperCase() + parteEntera.slice(1)) + ' dólares' + sufijo;
 }
 
@@ -1244,14 +1335,14 @@ function generarOrden() {
     }
   }
 
-  const nombre = document.getElementById('nombre').value.trim();
-  const cedula = document.getElementById('cedula').value.trim();
+  const nombre = getNombreCliente();
+  const cedula = getCedulaCliente();
   const equipos = getEquipos();
   const primerModelo = equipos.length > 0 ? equipos[0].modelo : '';
 
   if (!nombre || !cedula || !primerModelo) {
     document.getElementById('banner-final').className = 'val-banner warn show';
-    document.getElementById('banner-final').innerHTML = '⚠ <span>Complete nombre, cédula y al menos un equipo antes de enviar.</span>';
+    document.getElementById('banner-final').innerHTML = '⚠ <span>Complete los datos del cliente y al menos un equipo antes de enviar.</span>';
     return;
   }
 
@@ -1317,8 +1408,14 @@ function generarOrden() {
     } : {}),
     modelo:             modeloContrato,
     equipos:            equipos,
-    tipoCliente:        document.getElementById('tipo-cliente') ? document.getElementById('tipo-cliente').value : 'Natural',
+    tipoCliente:        tipoCliente,
     tipoVenta:          tipoVenta,
+    // Datos representante legal (para contratos)
+    nombre_representante_legal: getNombreRepresentante(),
+    cedula_representante:       getCedulaRepresentante(),
+    y_en_representacion_de:     getTextoRepresentante(),
+    razonSocial:                tipoCliente !== 'Persona Natural' ? (document.getElementById('razon-social')?.value.trim() || '') : '',
+    rucEmpresa:                 tipoCliente !== 'Persona Natural' ? (document.getElementById('ruc-empresa')?.value.trim() || '') : '',
     // Precio con desglose ITBMS
     exentoITBMS:        exento,
     precioNegociado:    precioNetoTotal,
