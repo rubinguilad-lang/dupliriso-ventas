@@ -370,6 +370,13 @@
             <input type="text" id="cedula" placeholder="Ej: 8-888-888">
           </div>
         </div>
+        <div class="field-row full">
+          <div class="field">
+            <label>Razón comercial (opcional)</label>
+            <input type="text" id="razon-comercial" placeholder="Nombre comercial / aviso de operación, si aplica">
+            <div class="hint">Si el cliente opera bajo un nombre comercial, aparecerá en el contrato. Déjelo vacío si no aplica.</div>
+          </div>
+        </div>
       </div>
 
       <!-- Persona Jurídica -->
@@ -549,7 +556,7 @@
           <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;">👥 Fiadores solidarios</div>
           <div style="background:#f5f2eb;border:1.5px solid #c8b87a;border-radius:2px;padding:14px;margin-bottom:14px;">
             <div style="font-size:11px;font-family:var(--mono);color:#8a6a10;font-weight:700;margin-bottom:6px;">¿Aplican fiadores en esta venta?</div>
-            <div style="font-size:12px;color:#6b5a1a;">Personas naturales que respaldan la deuda con su firma a título personal.</div>
+            <div style="font-size:12px;color:#6b5a1a;">Personas naturales que respaldan la deuda con su firma a título personal. Se admiten hasta tres (3).</div>
           </div>
           <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;">
             <input type="checkbox" id="check-fiadores" onchange="toggleFiadores()" style="width:16px;height:16px;">
@@ -592,7 +599,7 @@
               <input type="checkbox" id="check-fiador2" onchange="toggleFiador2()" style="width:16px;height:16px;">
               <span>Agregar segundo fiador</span>
             </label>
-            <div id="sec-fiador2" style="display:none;background:#fff;border:1px solid #d4cfc4;border-radius:2px;padding:16px;">
+            <div id="sec-fiador2" style="display:none;background:#fff;border:1px solid #d4cfc4;border-radius:2px;padding:16px;margin-bottom:12px;">
               <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;">Fiador Solidario #2</div>
               <div class="field-row">
                 <div class="field">
@@ -612,6 +619,40 @@
                 <div class="field">
                   <label>Estado civil</label>
                   <select id="fiador2-estado">
+                    <option value="soltero(a)">Soltero(a)</option>
+                    <option value="casado(a)">Casado(a)</option>
+                    <option value="divorciado(a)">Divorciado(a)</option>
+                    <option value="unido(a)">Unido(a) en matrimonio</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fiador 3 (opcional) -->
+            <label id="label-fiador3" style="display:none;align-items:center;gap:10px;font-size:13px;margin-bottom:12px;cursor:pointer;">
+              <input type="checkbox" id="check-fiador3" onchange="toggleFiador3()" style="width:16px;height:16px;">
+              <span>Agregar tercer fiador</span>
+            </label>
+            <div id="sec-fiador3" style="display:none;background:#fff;border:1px solid #d4cfc4;border-radius:2px;padding:16px;">
+              <div style="font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;">Fiador Solidario #3</div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Nombre completo</label>
+                  <input type="text" id="fiador3-nombre" placeholder="Nombre del fiador">
+                </div>
+                <div class="field">
+                  <label>Cédula de identidad</label>
+                  <input type="text" id="fiador3-cedula" placeholder="0-000-0000">
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Domicilio</label>
+                  <input type="text" id="fiador3-direccion" placeholder="Dirección del fiador">
+                </div>
+                <div class="field">
+                  <label>Estado civil</label>
+                  <select id="fiador3-estado">
                     <option value="soltero(a)">Soltero(a)</option>
                     <option value="casado(a)">Casado(a)</option>
                     <option value="divorciado(a)">Divorciado(a)</option>
@@ -709,12 +750,14 @@
         <div class="resumen-title">Orden de Pedido — Vista Previa</div>
         <div class="resumen-row"><span class="rlbl">Cliente</span><span class="rval" id="r-nombre">—</span></div>
         <div class="resumen-row"><span class="rlbl">Cédula / RUC</span><span class="rval" id="r-cedula">—</span></div>
+        <div class="resumen-row" id="r-row-razon-com" style="display:none;"><span class="rlbl">Razón comercial</span><span class="rval" id="r-razon-com">—</span></div>
         <div class="resumen-row"><span class="rlbl">Vendedor</span><span class="rval" id="r-vendedor">—</span></div>
         <div class="resumen-row"><span class="rlbl">Equipo</span><span class="rval" id="r-modelo">—</span></div>
         <div class="resumen-row"><span class="rlbl">Precio negociado</span><span class="rval" id="r-precio-neg">—</span></div>
         <div class="resumen-row"><span class="rlbl">Tipo de venta</span><span class="rval" id="r-tipo">—</span></div>
         <div class="resumen-row" id="r-row-cuota" style="display:none;"><span class="rlbl">Cuota mensual equipo</span><span class="rval highlight" id="r-cuota-fin">—</span></div>
         <div class="resumen-row" id="r-row-plazo" style="display:none;"><span class="rlbl">Plazo</span><span class="rval" id="r-plazo-fin">—</span></div>
+        <div class="resumen-row" id="r-row-fiadores" style="display:none;"><span class="rlbl">Fiadores solidarios</span><span class="rval" id="r-fiadores">—</span></div>
         <div class="resumen-row"><span class="rlbl">Mantenimiento / mes</span><span class="rval highlight" id="r-mant-fin">—</span></div>
         <div class="resumen-row highlight"><span class="rlbl">TOTAL MENSUAL CLIENTE</span><span class="rval" id="r-total-cliente">—</span></div>
       </div>
@@ -936,16 +979,27 @@ function getCedulaCliente() {
   return document.getElementById('cedula')?.value.trim() || '';
 }
 
+// Razón comercial — solo persona natural, campo opcional
+function getRazonComercial() {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (esJuridica) return '';
+  return document.getElementById('razon-comercial')?.value.trim() || '';
+}
+
 function getTextoRepresentante() {
   const tipo = document.getElementById('tipo-cliente').value;
   const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
   if (esJuridica) {
-    const repNombre = document.getElementById('rep-nombre')?.value.trim() || '';
-    const repCedula = document.getElementById('rep-cedula')?.value.trim() || '';
     const razonSocial = document.getElementById('razon-social')?.value.trim() || '';
     const ruc = document.getElementById('ruc-empresa')?.value.trim() || '';
-    // Texto para y_en_representacion_de
+    // Texto para y_en_representacion_de — Sociedad Anónima
     return ` y en representación de la Sociedad ${razonSocial} con RUC ${ruc}`;
+  }
+  // Persona Natural — depende de si llenó la razón comercial
+  const razonComercial = document.getElementById('razon-comercial')?.value.trim() || '';
+  if (razonComercial) {
+    return ` y en representación de ${razonComercial}`;
   }
   return '';
 }
@@ -1207,7 +1261,10 @@ function actualizarEmailVendedor() {
 function toggleFiadores() {
   const show = document.getElementById('check-fiadores').checked;
   document.getElementById('sec-fiadores').style.display = show ? 'block' : 'none';
-  if (!show) document.getElementById('check-fiador2').checked = false;
+  if (!show) {
+    document.getElementById('check-fiador2').checked = false;
+    document.getElementById('check-fiador3').checked = false;
+  }
   toggleFiador2();
 }
 
@@ -1215,6 +1272,17 @@ function toggleFiador2() {
   const show = document.getElementById('check-fiadores').checked &&
                document.getElementById('check-fiador2').checked;
   document.getElementById('sec-fiador2').style.display = show ? 'block' : 'none';
+  // El tercer fiador solo se ofrece cuando ya hay un segundo
+  document.getElementById('label-fiador3').style.display = show ? 'flex' : 'none';
+  if (!show) document.getElementById('check-fiador3').checked = false;
+  toggleFiador3();
+}
+
+function toggleFiador3() {
+  const show = document.getElementById('check-fiadores').checked &&
+               document.getElementById('check-fiador2').checked &&
+               document.getElementById('check-fiador3').checked;
+  document.getElementById('sec-fiador3').style.display = show ? 'block' : 'none';
 }
 
 function nuevoContrato() {
@@ -1232,6 +1300,10 @@ function nuevoContrato() {
   // Ocultar secciones condicionales
   document.getElementById('sec-fiadores').style.display = 'none';
   document.getElementById('sec-fiador2').style.display = 'none';
+  document.getElementById('sec-fiador3').style.display = 'none';
+  document.getElementById('label-fiador3').style.display = 'none';
+  // Restablecer tipo de cliente
+  toggleTipoCliente();
   // Limpiar banners
   document.querySelectorAll('.val-banner').forEach(el => el.className = 'val-banner');
   // Volver al paso 1
@@ -1273,6 +1345,17 @@ function buildResumen() {
   document.getElementById('r-cedula').textContent = esJuridica
     ? (cedulaRep + (cedula ? ' / RUC: ' + cedula : ''))
     : (cedula || '—');
+
+  // Razón comercial — solo se muestra si es persona natural y la llenaron
+  const razonCom = getRazonComercial();
+  const rowRazonCom = document.getElementById('r-row-razon-com');
+  if (!esJuridica && razonCom) {
+    rowRazonCom.style.display = 'flex';
+    document.getElementById('r-razon-com').textContent = razonCom;
+  } else {
+    rowRazonCom.style.display = 'none';
+  }
+
   document.getElementById('r-vendedor').textContent = document.getElementById('vendedor').value || '—';
   const equipos = getEquipos();
   const modeloText = equipos.map(e => e.modelo).filter(m=>m).join(' / ') || '—';
@@ -1293,6 +1376,30 @@ function buildResumen() {
   } else {
     document.getElementById('r-row-cuota').style.display = 'none';
     document.getElementById('r-row-plazo').style.display = 'none';
+  }
+
+  // Resumen de fiadores
+  const rowFiadores = document.getElementById('r-row-fiadores');
+  if (tipoVenta === 'financiada' && document.getElementById('check-fiadores').checked) {
+    const nombresFiadores = [];
+    const f1 = document.getElementById('fiador1-nombre').value.trim();
+    if (f1) nombresFiadores.push(f1);
+    if (document.getElementById('check-fiador2').checked) {
+      const f2 = document.getElementById('fiador2-nombre').value.trim();
+      if (f2) nombresFiadores.push(f2);
+    }
+    if (document.getElementById('check-fiador3').checked) {
+      const f3 = document.getElementById('fiador3-nombre').value.trim();
+      if (f3) nombresFiadores.push(f3);
+    }
+    if (nombresFiadores.length > 0) {
+      rowFiadores.style.display = 'flex';
+      document.getElementById('r-fiadores').textContent = nombresFiadores.join(', ');
+    } else {
+      rowFiadores.style.display = 'none';
+    }
+  } else {
+    rowFiadores.style.display = 'none';
   }
 
   document.getElementById('r-mant-fin').textContent = mant > 0 ? fmt(mant) : '—';
@@ -1450,6 +1557,7 @@ function generarOrden() {
     nombre_representante_legal: getNombreRepresentante(),
     cedula_representante:       getCedulaRepresentante(),
     y_en_representacion_de:     getTextoRepresentante(),
+    razonComercial:             getRazonComercial(),
     razonSocial:                tipoCliente !== 'Persona Natural' ? (document.getElementById('razon-social')?.value.trim() || '') : '',
     rucEmpresa:                 tipoCliente !== 'Persona Natural' ? (document.getElementById('ruc-empresa')?.value.trim() || '') : '',
     // Precio con desglose ITBMS — con decimales y comas
@@ -1489,44 +1597,84 @@ function generarOrden() {
     numeroContrato:     'MANT-' + cedula + '-' + new Date().toISOString().slice(0,10).replace(/-/g,''),
   };
 
-  // Fiadores (solo financiada)
+  // Fiadores (solo financiada) — hasta 3 codeudores solidarios
   if (tipoVenta === 'financiada') {
     const tieneFiador = document.getElementById('check-fiadores').checked;
     datos.tieneFiador = tieneFiador;
+
+    // Valores por defecto: todos vacíos
+    datos.cantidadFiadores  = 0;
+    datos.fiador1_nombre = '';  datos.fiador1_cedula = '';  datos.fiador1_direccion = '';  datos.fiador1_estado = '';
+    datos.fiador2_nombre = '';  datos.fiador2_cedula = '';  datos.fiador2_direccion = '';  datos.fiador2_estado = '';
+    datos.fiador3_nombre = '';  datos.fiador3_cedula = '';  datos.fiador3_direccion = '';  datos.fiador3_estado = '';
+    datos.fiador_intro = '';
+
     if (tieneFiador) {
+      const fiadores = [];
+
       const f1nombre = document.getElementById('fiador1-nombre').value.trim();
       const f1cedula = document.getElementById('fiador1-cedula').value.trim();
       const f1dir    = document.getElementById('fiador1-direccion').value.trim();
       const f1estado = document.getElementById('fiador1-estado').value;
-      datos.fiador1_nombre    = f1nombre;
-      datos.fiador1_cedula    = f1cedula;
-      datos.fiador1_direccion = f1dir;
-      datos.fiador1_estado    = f1estado;
-      // fiador_intro para insertar en el contrato
-      datos.fiador_intro = f1nombre
-        ? `, y como FIADOR SOLIDARIO ${f1nombre}, ${f1estado}, mayor de edad, cédula ${f1cedula}, domicilio ${f1dir}`
-        : '';
+      if (f1nombre) {
+        datos.fiador1_nombre = f1nombre;
+        datos.fiador1_cedula = f1cedula;
+        datos.fiador1_direccion = f1dir;
+        datos.fiador1_estado = f1estado;
+        fiadores.push({ nombre: f1nombre, cedula: f1cedula, direccion: f1dir, estado: f1estado });
+      }
 
       const tieneFiador2 = document.getElementById('check-fiador2').checked;
-      datos.tieneFiador2 = tieneFiador2;
       if (tieneFiador2) {
         const f2nombre = document.getElementById('fiador2-nombre').value.trim();
         const f2cedula = document.getElementById('fiador2-cedula').value.trim();
         const f2dir    = document.getElementById('fiador2-direccion').value.trim();
         const f2estado = document.getElementById('fiador2-estado').value;
-        datos.fiador2_nombre    = f2nombre;
-        datos.fiador2_cedula    = f2cedula;
-        datos.fiador2_direccion = f2dir;
-        datos.fiador2_estado    = f2estado;
-        datos.fiador_intro += f2nombre
-          ? `, y como SEGUNDO FIADOR SOLIDARIO ${f2nombre}, ${f2estado}, mayor de edad, cédula ${f2cedula}, domicilio ${f2dir}`
-          : '';
+        if (f2nombre) {
+          datos.fiador2_nombre = f2nombre;
+          datos.fiador2_cedula = f2cedula;
+          datos.fiador2_direccion = f2dir;
+          datos.fiador2_estado = f2estado;
+          fiadores.push({ nombre: f2nombre, cedula: f2cedula, direccion: f2dir, estado: f2estado });
+        }
       }
-    } else {
-      datos.fiador_intro = '';
-      datos.fiador1_nombre = '';
-      datos.fiador1_cedula = '';
-      datos.fiador1_direccion = '';
+
+      const tieneFiador3 = document.getElementById('check-fiador3').checked;
+      if (tieneFiador3) {
+        const f3nombre = document.getElementById('fiador3-nombre').value.trim();
+        const f3cedula = document.getElementById('fiador3-cedula').value.trim();
+        const f3dir    = document.getElementById('fiador3-direccion').value.trim();
+        const f3estado = document.getElementById('fiador3-estado').value;
+        if (f3nombre) {
+          datos.fiador3_nombre = f3nombre;
+          datos.fiador3_cedula = f3cedula;
+          datos.fiador3_direccion = f3dir;
+          datos.fiador3_estado = f3estado;
+          fiadores.push({ nombre: f3nombre, cedula: f3cedula, direccion: f3dir, estado: f3estado });
+        }
+      }
+
+      datos.tieneFiador2 = tieneFiador2;
+      datos.tieneFiador3 = tieneFiador3;
+      datos.cantidadFiadores = fiadores.length;
+      datos.fiadores = fiadores;
+
+      // Cláusula de constitución de codeudores — un solo texto que lista a todos
+      // Formato: "LUIS OLMEDO, varón/mujer, panameño(a), mayor de edad, con identidad
+      //  personal número 7-895-895, con domicilio en X" — unidos con " y "
+      if (fiadores.length > 0) {
+        const partes = fiadores.map(function(f) {
+          return f.nombre + ', ' + f.estado + ', mayor de edad, con identidad personal número '
+               + f.cedula + ', con domicilio en ' + f.direccion;
+        });
+        datos.fiador_clausula = 'A fin de garantizar el cumplimiento de esta obligación se constituye(n) como CODEUDOR(ES) SOLIDARIO(S) '
+                              + partes.join(' y ') + '.';
+        // fiador_intro se mantiene para compatibilidad con la versión previa del Pagaré
+        datos.fiador_intro = ', y como CODEUDOR(ES) SOLIDARIO(S) ' + fiadores.map(function(f){return f.nombre;}).join(' y ');
+      } else {
+        datos.fiador_clausula = '';
+        datos.fiador_intro = '';
+      }
     }
   }
 
