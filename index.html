@@ -1004,6 +1004,26 @@ function getTextoRepresentante() {
   return '';
 }
 
+// Texto completo de "quien actúa ..." para los contratos (marcador {{y_en_representacion_de}}).
+// Persona jurídica SIN fiador: el representante firma solo en representación de la entidad,
+// no en su propio nombre. CON fiador: firma en su propio nombre y en representación.
+function getCalidadActuacion(tieneFiador) {
+  const tipo = document.getElementById('tipo-cliente').value;
+  const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
+  if (!esJuridica) {
+    // Persona Natural — siempre en su propio nombre (+ razón comercial si la llenaron)
+    return 'en su propio nombre' + getTextoRepresentante();
+  }
+  const razonSocial = document.getElementById('razon-social')?.value.trim() || '';
+  const ruc = document.getElementById('ruc-empresa')?.value.trim() || '';
+  // "la Sociedad X" solo para S.A.; fundaciones e instituciones van por su nombre
+  const esSociedad = tipo === 'Sociedad Anónima' && !/fundaci[oó]n/i.test(razonSocial);
+  const entidad = (esSociedad ? 'la Sociedad ' : '') + razonSocial + ' con RUC ' + ruc;
+  return tieneFiador
+    ? 'en su propio nombre y en representación de ' + entidad
+    : 'en nombre y representación de ' + entidad;
+}
+
 function getNombreRepresentante() {
   const tipo = document.getElementById('tipo-cliente').value;
   const esJuridica = tipo === 'Sociedad Anónima' || tipo === 'Gobierno / Institución';
@@ -1677,6 +1697,9 @@ function generarOrden() {
       }
     }
   }
+
+  // Calidad en que actúa el cliente (depende de si hay fiadores)
+  datos.calidad_actuacion = getCalidadActuacion((datos.cantidadFiadores || 0) > 0);
 
   // Webhooks separados por tipo de venta — sin router, sin filtros
   const WEBHOOK_CONTADO    = 'https://hook.us2.make.com/5vg22lt847ax1d57pykdrmul14i5btbu';
