@@ -667,12 +667,8 @@
         <!-- Aprobación express -->
         <div class="apro-box" id="apro-box" style="margin-top:14px;">
           <div class="apro-title">⚡ Aprobación Express</div>
-          <div class="apro-desc">Si el gerente no está disponible para aprobar en este momento, puedes generar los contratos con la cláusula <em>"Sujeto a aprobación crediticia"</em>. El financiamiento <strong>no está confirmado</strong> hasta que el gerente firme.</div>
-          <label class="apro-check">
-            <input type="checkbox" id="check-express" onchange="toggleExpress()">
-            <span>Generar contratos de forma provisional con cláusula de aprobación pendiente. El cliente entiende que el financiamiento no está aprobado.</span>
-          </label>
-          <div class="clausula-box" id="clausula-preview">
+          <div class="apro-desc">Toda venta financiada genera los contratos de inmediato con la cláusula <em>"Sujeto a aprobación crediticia"</em>. El financiamiento <strong>no está confirmado</strong> hasta que el gerente firme.</div>
+          <div class="clausula-box show" id="clausula-preview">
             📋 CLÁUSULA A INCLUIR:<br><br>
             "El presente contrato está <strong>sujeto a aprobación crediticia</strong> por parte de [Empresa]. El financiamiento aquí acordado no tendrá efecto legal hasta tanto el representante autorizado de la empresa suscriba su aprobación en el campo correspondiente. En caso de no aprobación, el presente documento quedará nulo de pleno derecho."
           </div>
@@ -1261,11 +1257,6 @@ function calcMant() {
   }
 }
 
-function toggleExpress() {
-  const checked = document.getElementById('check-express').checked;
-  document.getElementById('clausula-preview').className = 'clausula-box' + (checked ? ' show' : '');
-}
-
 const EMAILS_VENDEDORES = {
   'Guilad Rubin':   'grubin@dupliriso.com',
   'Jorge Huerta':   'jhuerta@dupliriso.com',
@@ -1427,7 +1418,7 @@ function buildResumen() {
 
   // Documentos
   const docsList = document.getElementById('docs-list');
-  const express = document.getElementById('check-express').checked;
+  const express = true; // Aprobación Express siempre activa
   let docs = [];
 
   docs.push({
@@ -1508,7 +1499,7 @@ function generarOrden() {
     return;
   }
 
-  const express     = document.getElementById('check-express') ? document.getElementById('check-express').checked : false;
+  const express     = true; // Aprobación Express siempre activa
   const exento      = esExentoITBMS();
   const sinInteres  = esSinInteres();
   const ITBMS_RATE  = exento ? 0 : 0.07;
@@ -1704,16 +1695,8 @@ function generarOrden() {
   // Webhooks separados por tipo de venta — sin router, sin filtros
   const WEBHOOK_CONTADO    = 'https://hook.us2.make.com/5vg22lt847ax1d57pykdrmul14i5btbu';
   const WEBHOOK_FINANCIADA_EXPRESS = 'https://hook.us2.make.com/nc894mlncex5m79mjs4r1j8908joxybr';
-  const WEBHOOK_FINANCIADA = 'https://hook.us2.make.com/cdkdheilojakcn9iaq56vdwqquo6dsa5';
 
-  let webhookUrl;
-  if (tipoVenta === 'contado') {
-    webhookUrl = WEBHOOK_CONTADO;
-  } else if (express) {
-    webhookUrl = WEBHOOK_FINANCIADA_EXPRESS;
-  } else {
-    webhookUrl = WEBHOOK_FINANCIADA;
-  }
+  const webhookUrl = tipoVenta === 'contado' ? WEBHOOK_CONTADO : WEBHOOK_FINANCIADA_EXPRESS;
 
   fetch(webhookUrl, {
     method: 'POST',
@@ -1725,10 +1708,8 @@ function generarOrden() {
   let textoMsg;
   if (tipoVenta === 'contado') {
     textoMsg = `✅ Orden contado enviada. El Contrato de Mantenimiento se generará automáticamente y llegará a tu correo en segundos.`;
-  } else if (express) {
-    textoMsg = `📋 Orden financiada enviada con Aprobación Express. Los contratos tienen la cláusula "Sujeto a aprobación crediticia". El gerente recibirá los documentos para revisión APC.`;
   } else {
-    textoMsg = `🔶 Orden financiada enviada. El gerente recibirá los documentos del cliente para verificar en APC y aprobar. Los contratos se generarán al ser aprobada.`;
+    textoMsg = `📋 Orden financiada enviada. Los contratos tienen la cláusula "Sujeto a aprobación crediticia". El gerente recibirá los documentos para revisión APC.`;
   }
   document.getElementById('msg-enviado-texto').textContent = textoMsg;
 
